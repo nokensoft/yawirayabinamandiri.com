@@ -254,6 +254,45 @@ function seedDatabase() {
   return { version: 2, createdAt: new Date().toISOString(), units, employees, reports, kalender, content, activity: [] };
 }
 
+// ---------------------------------------------------------------- normalisasi data tersimpan
+// Data di localStorage / file backup bisa berasal dari versi lama atau tersimpan tidak lengkap.
+// Lengkapi field yang hilang agar panel tidak error; kembalikan null jika struktur tidak bisa dipakai.
+function normalizeDb(db) {
+  if (!db || typeof db !== 'object' || !Array.isArray(db.employees) || !Array.isArray(db.units) || !Array.isArray(db.reports)) return null;
+  const cal = db.kalender && typeof db.kalender === 'object' ? db.kalender : {};
+  const def = defaultCalendar();
+  db.kalender = {
+    hariKerja: Array.isArray(cal.hariKerja) ? cal.hariKerja.filter((x) => Number.isInteger(x) && x >= 0 && x <= 6) : def.hariKerja,
+    jamGenerate: /^[0-2][0-9]:[0-5][0-9]$/.test(cal.jamGenerate || '') ? cal.jamGenerate : def.jamGenerate,
+    otomatis: typeof cal.otomatis === 'boolean' ? cal.otomatis : def.otomatis,
+    libur: Array.isArray(cal.libur) ? cal.libur.filter((l) => l && l.tanggal && l.nama) : def.libur,
+    // tanpa riwayat generate: jangan menyusulkan draft ke belakang, mulai dari hari ini
+    lastGenerated: cal.lastGenerated || todayISO(),
+  };
+  db.reports.forEach((r) => {
+    if (!r.kehadiran) r.kehadiran = 'Hadir';
+    if (typeof r.draft !== 'boolean') r.draft = false;
+    if (typeof r.verified !== 'boolean') r.verified = false;
+    if (r.kehadiran === 'Hadir' && !REPORT_STATUS[r.status]) r.status = 'Proses';
+    if (r.kehadiran !== 'Hadir') r.status = '';
+    ['jam', 'progress', 'kualitas'].forEach((k) => { r[k] = Number(r[k]) || 0; });
+    if (!K3_STATUS[r.k3]) r.k3 = 'Aman';
+    if (!KEHADIRAN[r.kehadiran]) r.kehadiran = 'Hadir';
+  });
+  db.employees.forEach((e) => {
+    if (!Array.isArray(e.dokumen)) e.dokumen = [];
+    if (!e.kontrak || typeof e.kontrak !== 'object') e.kontrak = { nomor: '', jenis: 'PKWT', mulai: '', selesai: '', gaji: '', file: null };
+    if (!e.kontakDarurat || typeof e.kontakDarurat !== 'object') e.kontakDarurat = { nama: '', hubungan: '', telp: '' };
+  });
+  db.units.forEach((u) => { if (!Array.isArray(u.kegiatan)) u.kegiatan = []; });
+  if (!Array.isArray(db.activity)) db.activity = [];
+  if (!db.content || !db.content.beranda || !Array.isArray(db.content.layanan) || !Array.isArray(db.content.galeri) || !db.content.kontak) {
+    db.content = seedDatabase().content;
+  }
+  db.version = 2;
+  return db;
+}
+
 // ---------------------------------------------------------------- konstanta tampilan
 const EMP_STATUS = {
   Aktif: { cls: 'bg-emerald-50 text-emerald-700 ring-emerald-600/20', icon: 'fa-circle-check', bar: '#059669' },
@@ -313,9 +352,11 @@ document.addEventListener('alpine:init', () => {
     route: 'dashboard',
     routes: ROUTES,
     sidebar: false,
+    isDesktop: window.matchMedia('(min-width: 1024px)').matches,
     collapsed: (() => { try { return localStorage.getItem('ybm-admin-sidebar') === 'hidden'; } catch (e) { return false; } })(),
     userMenu: false,
     now: new Date(),
+    today: todayISO(),
     toasts: [],
     tip: { show: false, x: 0, y: 0, title: '', value: '' },
     confirmBox: { show: false, text: '', action: null },
@@ -346,8 +387,10 @@ document.addEventListener('alpine:init', () => {
       try { session = JSON.parse(localStorage.getItem(SESSION_KEY) || 'null'); } catch (e) { /* abaikan */ }
       if (!session) { location.replace('login.html'); return; }
       this.session = session;
-      try { this.db = JSON.parse(localStorage.getItem(DB_KEY) || 'null'); } catch (e) { this.db = null; }
-      if (!this.db) { this.db = seedDatabase(); this.save(false); }
+      let stored = null;
+      try { stored = JSON.parse(localStorage.getItem(DB_KEY) || 'null'); } catch (e) { stored = null; }
+      this.db = normalizeDb(stored) || seedDatabase();
+      this.save(false);
       this.draft = clone(this.db.content);
       this.repFrom = iso(addDays(new Date(), -6));
       this.repTo = todayISO();
@@ -357,12 +400,24 @@ document.addEventListener('alpine:init', () => {
         const r = location.hash.replace('#', '') || 'dashboard';
         this.route = ROUTES[r] ? r : 'dashboard';
         this.sidebar = false;
+        this.userMenu = false; this.globalQ = '';
+        this.detail = null; this.preview = null;
+        this.empModal = false; this.repModal = false; this.unitModal = false; this.docModal = false;
+        document.title = `${ROUTES[this.route][0]} — Panel Admin YBM`;
         if (this.route.startsWith('konten')) this.draft = clone(this.db.content);
         window.scrollTo(0, 0);
       };
-      window.addEventListener('hashchange', go);
+      window.addEventListener('hashchange', () => { this.hideTip(); go(); });
+      const mq = window.matchMedia('(min-width: 1024px)');
+      mq.addEventListener('change', (e) => { this.isDesktop = e.matches; if (e.matches) this.sidebar = false; });
       go();
-      setInterval(() => { this.now = new Date(); }, 1000);
+      setInterval(() => {
+        this.now = new Date();
+        const t = todayISO();
+        if (t !== this.today) { this.today = t; this.runGenerator(); }
+      }, 1000);
+      // tooltip grafik tidak boleh "tertinggal" saat halaman digulir / berpindah menu
+      window.addEventListener('scroll', () => this.hideTip(), { passive: true });
       // Generator otomatis dicek setiap menit (mis. saat jam generate tercapai / berganti hari)
       setInterval(() => this.runGenerator(), 60 * 1000);
     },
@@ -404,7 +459,7 @@ document.addEventListener('alpine:init', () => {
       return out;
     },
     get todayProgress() {
-      const rs = this.db.reports.filter((r) => r.tanggal === todayISO());
+      const rs = this.db.reports.filter((r) => r.tanggal === this.today);
       const filled = rs.filter((r) => !r.draft).length;
       return { total: rs.length, filled, draft: rs.length - filled, pct: rs.length ? Math.round((filled / rs.length) * 100) : 0, work: this.isWork(todayISO()) };
     },
@@ -459,8 +514,9 @@ document.addEventListener('alpine:init', () => {
     },
 
     // Sidebar: desktop = tampil/sembunyi (diingat), mobile = buka drawer
+    get sidebarVisible() { return this.sidebar || (this.isDesktop && !this.collapsed); },
     toggleSidebar() {
-      if (window.innerWidth < 1024) { this.sidebar = true; return; }
+      if (!this.isDesktop) { this.sidebar = !this.sidebar; return; }
       this.collapsed = !this.collapsed;
       try { localStorage.setItem('ybm-admin-sidebar', this.collapsed ? 'hidden' : 'shown'); } catch (e) { /* abaikan */ }
     },
@@ -482,9 +538,9 @@ document.addEventListener('alpine:init', () => {
     age(s) { if (!s) return '—'; const b = parseISO(s), n = new Date(); let a = n.getFullYear() - b.getFullYear(); if (n < new Date(n.getFullYear(), b.getMonth(), b.getDate())) a--; return a + ' th'; },
     tenure(s) { const d = daysBetween(s, todayISO()); const y = Math.floor(d / 365), m = Math.floor((d % 365) / 30); return (y ? y + ' th ' : '') + m + ' bln'; },
     empSt(s) { return EMP_STATUS[s] || EMP_STATUS.Nonaktif; },
-    repSt(s) { return REPORT_STATUS[s]; },
-    k3Status(s) { return K3_STATUS[s]; },
-    docStatusOf(s) { return DOC_STATUS[s]; },
+    repSt(s) { return REPORT_STATUS[s] || REPORT_STATUS.Proses; },
+    k3Status(s) { return K3_STATUS[s] || K3_STATUS.Aman; },
+    docStatusOf(s) { return DOC_STATUS[s] || DOC_STATUS['Tanpa Masa Berlaku']; },
     grade(s) { return GRADE(s); },
 
     // ---------------------------------------------------------- lookup
@@ -555,7 +611,7 @@ document.addEventListener('alpine:init', () => {
     // ---------------------------------------------------------- dashboard
     get stats() {
       const e = this.db.employees;
-      const t = todayISO();
+      const t = this.today;
       const rt = this.db.reports.filter((r) => r.tanggal === t);
       return {
         total: e.length,
@@ -571,14 +627,31 @@ document.addEventListener('alpine:init', () => {
     },
 
     get dailyCounts() {
+      const base = parseISO(this.today);
       const out = [];
       for (let i = 13; i >= 0; i--) {
-        const d = iso(addDays(new Date(), -i));
-        out.push({ d, n: this.db.reports.filter((r) => r.tanggal === d && !r.draft && r.kehadiran === 'Hadir').length, sunday: !this.isWork(d), libur: this.holiday(d) || (this.isWork(d) ? '' : 'Bukan hari kerja') });
+        const d = iso(addDays(base, -i));
+        const rs = this.db.reports.filter((r) => r.tanggal === d);
+        const hadir = rs.filter((r) => !r.draft && r.kehadiran === 'Hadir').length;
+        const absen = rs.filter((r) => !r.draft && r.kehadiran !== 'Hadir').length;
+        const draft = rs.filter((r) => r.draft).length;
+        const work = this.isWork(d);
+        out.push({
+          d, hadir, absen, draft, total: hadir + absen + draft, today: d === this.today,
+          // hari libur tetap bisa punya laporan (mis. lembur) — tampilkan jika ada
+          sunday: !work && !rs.length, libur: this.holiday(d) || (work ? '' : 'Bukan hari kerja'),
+        });
       }
-      const max = Math.max(...out.map((x) => x.n), 1);
-      const ceil = Math.ceil(max / 10) * 10;
-      return { rows: out, max: ceil };
+      const max = Math.max(...out.map((x) => x.total), 1);
+      const step = max <= 10 ? 2 : max <= 50 ? 10 : 50;
+      return { rows: out, max: Math.ceil(max / step) * step };
+    },
+    dayTip(c) {
+      if (c.sunday) return c.libur;
+      const parts = [`Hadir ${c.hadir}`];
+      if (c.absen) parts.push(`Izin/sakit/cuti/alpa ${c.absen}`);
+      if (c.draft) parts.push(`Belum diisi ${c.draft}`);
+      return parts.join(' · ') + (c.libur ? ` (${c.libur})` : '');
     },
 
     get statusCounts() {
@@ -602,8 +675,12 @@ document.addEventListener('alpine:init', () => {
 
     // ---------------------------------------------------------- tooltip grafik
     showTip(ev, title, value) {
-      const r = ev.currentTarget.getBoundingClientRect();
-      this.tip = { show: true, x: r.left + r.width / 2, y: r.top, title, value };
+      const col = ev.currentTarget.getBoundingClientRect();
+      const bar = ev.currentTarget.querySelector('[data-bar]');
+      const br = bar && bar.offsetHeight ? bar.getBoundingClientRect() : null;
+      // kolom tanpa batang (libur / tanpa data): tooltip di dekat garis dasar
+      const y = br ? br.top : col.height > 60 ? col.bottom - 40 : col.top;
+      this.tip = { show: true, x: col.left + col.width / 2, y, title, value };
     },
     hideTip() { this.tip.show = false; },
 
@@ -868,8 +945,9 @@ document.addEventListener('alpine:init', () => {
       rd.onload = () => {
         try {
           const data = JSON.parse(rd.result);
-          if (!data.employees || !data.units || !data.reports) throw new Error('format');
-          this.db = data; this.draft = clone(data.content); this.save(true, 'Database dipulihkan dari file backup');
+          const db = normalizeDb(data);
+          if (!db) throw new Error('format');
+          this.db = db; this.draft = clone(db.content); this.save(true, 'Database dipulihkan dari file backup');
         } catch (e) { this.toast('File backup tidak valid.', 'error'); }
       };
       rd.readAsText(file);

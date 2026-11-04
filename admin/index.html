@@ -45,11 +45,15 @@
 
 <!-- =============================================================== SIDEBAR -->
 <div x-show="sidebar" x-transition.opacity @click="sidebar = false" class="fixed inset-0 z-40 bg-ink/50 lg:hidden"></div>
-<aside :class="sidebar ? 'translate-x-0' : (collapsed ? '-translate-x-full' : '-translate-x-full lg:translate-x-0')" class="fixed inset-y-0 left-0 z-50 flex w-64 flex-col bg-ink text-white transition-transform duration-300" aria-label="Sidebar">
-  <a href="#dashboard" class="flex h-16 shrink-0 items-center gap-3 border-b border-white/10 px-5">
+<aside id="admin-sidebar" :class="sidebar ? 'translate-x-0' : (collapsed ? '-translate-x-full' : '-translate-x-full lg:translate-x-0')" class="fixed inset-y-0 left-0 z-50 flex w-64 flex-col bg-ink text-white transition-transform duration-300" aria-label="Sidebar"
+  :inert="!sidebarVisible" x-trap.noscroll="sidebar && !isDesktop" @keydown.escape.window="sidebar = false">
+  <div class="flex h-16 shrink-0 items-center border-b border-white/10 pr-2">
+  <a href="#dashboard" @click="sidebar = false" class="flex h-full min-w-0 flex-1 items-center gap-3 px-5 outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-sky">
     <span class="bg-white p-1"><img src="../assets/img/logo-ybm.png" alt="Logo YBM" class="h-7 w-auto"></span>
-    <span class="leading-tight"><span class="block text-sm font-semibold">YBM Admin</span><span class="block text-[11px] text-white/40">Panel &amp; Sistem Database</span></span>
+    <span class="leading-tight"><span class="block text-sm font-semibold">YBM Admin</span><span class="block truncate text-[11px] text-white/40">Panel &amp; Sistem Database</span></span>
   </a>
+  <button type="button" @click="sidebar = false" class="grid h-9 w-9 place-items-center rounded-md text-white/60 hover:bg-white/10 hover:text-white lg:hidden" aria-label="Tutup menu"><i class="fa-solid fa-xmark"></i></button>
+  </div>
   <nav class="flex-1 space-y-6 overflow-y-auto px-3 py-5" aria-label="Menu admin">
     <template x-for="grp in [
       ['Utama', ['dashboard']],
@@ -60,7 +64,7 @@
       <div>
         <p class="px-3 pb-2 text-[10px] font-semibold uppercase tracking-widest text-white/30" x-html="grp[0]"></p>
         <template x-for="r in grp[1]">
-          <a :href="'#' + r" class="side-link" :class="route === r && 'is-active'">
+          <a :href="'#' + r" @click="sidebar = false" class="side-link" :class="route === r && 'is-active'" :aria-current="route === r ? 'page' : null">
             <i class="fa-solid w-4 text-center" :class="routes[r][1]"></i>
             <span class="flex-1" x-text="routes[r][0].replace('Konten: ', '')"></span>
             <span x-show="r === 'laporan' && stats.draft" class="bg-amber-500 px-1.5 text-[10px] font-semibold text-white" :title="stats.draft + ' laporan belum diisi'" x-text="stats.draft"></span>
@@ -79,7 +83,7 @@
 <!-- =============================================================== MAIN -->
 <div class="transition-[padding] duration-300" :class="collapsed ? 'lg:pl-0' : 'lg:pl-64'">
   <header class="sticky top-0 z-30 flex h-16 items-center gap-3 border-b border-black/5 bg-white/90 px-4 backdrop-blur sm:px-6">
-    <button @click="toggleSidebar()" class="btn-icon" :aria-label="collapsed ? 'Tampilkan sidebar' : 'Sembunyikan sidebar'" :title="collapsed ? 'Tampilkan sidebar' : 'Sembunyikan sidebar'"><i class="fa-solid fa-bars lg:hidden"></i><i class="fa-solid hidden lg:inline" :class="collapsed ? 'fa-indent' : 'fa-outdent'"></i></button>
+    <button @click="toggleSidebar()" class="btn-icon" aria-controls="admin-sidebar" :aria-expanded="sidebarVisible" :aria-label="sidebarVisible ? 'Sembunyikan menu' : 'Tampilkan menu'" :title="sidebarVisible ? 'Sembunyikan menu' : 'Tampilkan menu'"><i class="fa-solid fa-bars lg:hidden"></i><i class="fa-solid hidden lg:inline" :class="collapsed ? 'fa-indent' : 'fa-outdent'"></i></button>
     <div class="min-w-0 flex-1">
       <p class="truncate text-sm font-semibold" x-text="pageTitle"></p>
       <p class="hidden text-xs text-ink/40 sm:block"><span x-text="dateLong"></span> · <span class="tabular-nums" x-text="clock"></span></p>
@@ -156,11 +160,17 @@
       <div class="grid grid-cols-1 gap-4 xl:grid-cols-12">
         <!-- Grafik laporan harian -->
         <div class="card p-6 xl:col-span-8">
-          <div class="flex items-start justify-between gap-4">
-            <div><h2 class="font-semibold">Daily report terisi</h2><p class="text-xs text-ink/50">Laporan karyawan hadir per hari kerja, 14 hari terakhir</p></div>
+          <div class="flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
+            <div><h2 class="font-semibold">Daily report per hari kerja</h2><p class="text-xs text-ink/50">Status pengisian laporan karyawan, 14 hari terakhir</p></div>
             <a href="#laporan" class="text-xs font-medium text-navy hover:underline">Lihat semua</a>
           </div>
-          <div class="relative mt-6 h-56" role="img" :aria-label="'Grafik jumlah daily report 14 hari terakhir. Hari ini ' + stats.laporanHariIni + ' laporan.'">
+          <ul class="mt-4 flex flex-wrap gap-x-4 gap-y-1.5 text-xs text-ink/60" aria-label="Keterangan grafik">
+            <li class="inline-flex items-center gap-1.5"><span class="h-2.5 w-2.5 bg-navy"></span> Hadir</li>
+            <li class="inline-flex items-center gap-1.5"><span class="h-2.5 w-2.5 bg-slate-400"></span> Izin / sakit / cuti / alpa</li>
+            <li class="inline-flex items-center gap-1.5"><span class="h-2.5 w-2.5 border border-dashed border-amber-500 bg-amber-50"></span> Belum diisi</li>
+            <li class="inline-flex items-center gap-1.5"><span class="h-2.5 w-2.5 bg-[repeating-linear-gradient(135deg,#fff,#fff_2px,#d1d5db_2px,#d1d5db_4px)] ring-1 ring-black/10"></span> Libur</li>
+          </ul>
+          <div class="relative mt-5 h-56" role="img" :aria-label="'Grafik daily report 14 hari terakhir. Hari ini: ' + dayTip(dailyCounts.rows[13])">
             <template x-for="g in [1, 0.5, 0]">
               <div class="absolute left-8 right-0 border-t border-ink/10" :class="g ? 'border-dashed' : ''" :style="`bottom:${g * 100}%`">
                 <span class="absolute -left-8 w-6 -translate-y-1/2 text-right text-[10px] tabular-nums text-ink/40" x-text="Math.round(dailyCounts.max * g)"></span>
@@ -168,15 +178,21 @@
             </template>
             <div class="absolute inset-y-0 left-8 right-0 flex items-end gap-[2px]">
               <template x-for="c in dailyCounts.rows" :key="c.d">
-                <div class="group flex h-full flex-1 cursor-default items-end justify-center" @mouseenter="showTip($event, fmtDay(c.d), c.sunday ? c.libur : c.n + ' laporan terisi')" @mouseleave="hideTip()">
-                  <div class="w-full max-w-[26px] rounded-t-[3px] bg-navy transition-colors group-hover:bg-sky" :style="`height:${(c.n / dailyCounts.max) * 100}%`"></div>
+                <div class="group flex h-full flex-1 cursor-default items-end justify-center"
+                  :class="c.sunday && 'bg-[repeating-linear-gradient(135deg,transparent,transparent_5px,#eef0f3_5px,#eef0f3_10px)]'"
+                  @mouseenter="showTip($event, fmtDay(c.d) + (c.today ? ' · hari ini' : ''), dayTip(c))" @mouseleave="hideTip()">
+                  <div data-bar x-show="c.total" class="flex w-full max-w-[26px] flex-col-reverse gap-[2px] overflow-hidden rounded-t-[3px]" :style="`height:${(c.total / dailyCounts.max) * 100}%`">
+                    <div x-show="c.hadir" class="min-h-0 w-full bg-navy transition-colors group-hover:bg-sky" :style="`flex:${c.hadir} 1 0`"></div>
+                    <div x-show="c.absen" class="min-h-0 w-full bg-slate-400" :style="`flex:${c.absen} 1 0`"></div>
+                    <div x-show="c.draft" class="min-h-0 w-full border border-dashed border-amber-500 bg-amber-50" :style="`flex:${c.draft} 1 0`"></div>
+                  </div>
                 </div>
               </template>
             </div>
           </div>
           <div class="ml-8 mt-2 flex gap-[2px]">
             <template x-for="(c, i) in dailyCounts.rows" :key="c.d">
-              <span class="flex-1 text-center text-[10px] tabular-nums text-ink/40" x-text="i % 2 === 1 || i === 13 ? parseInt(c.d.slice(8)) : ''"></span>
+              <span class="flex-1 text-center text-[10px] tabular-nums" :class="c.today ? 'font-semibold text-ink' : 'text-ink/40'" x-text="i % 2 === 1 || c.today ? parseInt(c.d.slice(8)) : ''"></span>
             </template>
           </div>
         </div>
@@ -185,9 +201,9 @@
         <div class="card p-6 xl:col-span-4">
           <h2 class="font-semibold">Status karyawan</h2>
           <p class="text-xs text-ink/50">Komposisi <span x-text="stats.total"></span> karyawan terdaftar</p>
-          <div class="mt-6 flex h-3 gap-[2px] overflow-hidden" role="img" aria-label="Komposisi status karyawan">
+          <div class="mt-6 flex h-3 gap-[2px] overflow-hidden rounded-[3px]" role="img" aria-label="Komposisi status karyawan">
             <template x-for="s in statusCounts" :key="s.s">
-              <div x-show="s.n" class="h-full first:rounded-l-[3px] last:rounded-r-[3px]" :style="`width:${s.pct}%;background:${s.bar}`" @mouseenter="showTip($event, s.s, s.n + ' karyawan')" @mouseleave="hideTip()"></div>
+              <div x-show="s.n" class="h-full" :style="`width:${s.pct}%;background:${s.bar}`" @mouseenter="showTip($event, s.s, s.n + ' karyawan')" @mouseleave="hideTip()"></div>
             </template>
           </div>
           <ul class="mt-6 divide-y divide-black/5">
@@ -974,7 +990,7 @@
               <div class="absolute inset-y-0 left-7 right-0 flex items-end gap-[2px]">
                 <template x-for="c in empTrend(detail)" :key="c.d">
                   <div class="group flex h-full flex-1 items-end justify-center" @mouseenter="showTip($event, fmtDay(c.d), c.v === null ? c.note : 'Progres ' + c.v + '%')" @mouseleave="hideTip()">
-                    <div x-show="c.v !== null" class="w-full max-w-[22px] rounded-t-[3px] bg-navy group-hover:bg-sky" :style="`height:${c.v}%`"></div>
+                    <div data-bar x-show="c.v !== null" class="w-full max-w-[22px] rounded-t-[3px] bg-navy group-hover:bg-sky" :style="`height:${c.v}%`"></div>
                     <div x-show="c.v === null && c.miss" class="h-px w-full max-w-[22px] border-t border-dashed border-red-400"></div>
                     <div x-show="c.v === null && !c.sunday && !c.miss" class="h-px w-full max-w-[22px] border-t border-dashed border-amber-500"></div>
                   </div>

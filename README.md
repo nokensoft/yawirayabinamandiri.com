@@ -237,6 +237,16 @@ Berlaku untuk semua paket:
 - 🔧 **Pemeliharaan dan perbaikan minor**, termasuk pengecekan berkala agar website tetap berjalan normal
 - ✅ **Garansi perbaikan minor**: 3 bulan (Paket 1), 6 bulan (Paket 2), 12 bulan (Paket 3)
 
+**Bonus desain branding peluncuran website:**
+
+- 🪪 Desain **kartu nama** perusahaan
+- 🚀 Desain **poster launching website**
+- 📊 Desain **presentasi profil perusahaan** dengan tema yang sama dengan website
+- 👕 Desain **baju** dengan alamat website resmi
+- 🖼️ **Poster mockup** website, kartu nama dan gantungan kunci
+
+> Bonus desain berupa file desain digital siap cetak. Biaya cetak dan produksi (kartu nama, baju, gantungan kunci, poster) tidak termasuk dalam harga paket.
+
 ### Layanan Lanjutan Setelah Peluncuran Website
 
 Setelah website diluncurkan, Nokensoft juga menawarkan layanan lanjutan agar website benar-benar dimanfaatkan:
