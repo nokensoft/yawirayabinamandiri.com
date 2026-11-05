@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="id" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PT. Yawiraya Bina Mandiri — Kontraktor Putra Daerah Papua</title>
+  <meta name="description" content="PT. Yawiraya Bina Mandiri: general contractor, labour supplier dan perdagangan umum di Timika, Papua sejak 1996.">
+  <link rel="icon" type="image/png" href="assets/img/logo-ybm.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+  <script src="https://cdn.tailwindcss.com/3.4.5"></script>
+  <script src="assets/js/tailwind.config.js"></script>
+  <link rel="stylesheet" href="assets/css/style.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/@alpinejs/collapse@3.14.1/dist/cdn.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/@alpinejs/intersect@3.14.1/dist/cdn.min.js"></script>
+  <script defer src="assets/js/main.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.1/dist/cdn.min.js"></script>
+</head>
+<body class="bg-surface font-sans text-ink antialiased">
+<a href="#main" class="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[60] focus:rounded-md focus:bg-navy focus:px-4 focus:py-2 focus:text-white">Lewati ke konten</a>
+
+<div x-data="topbar" class="notranslate bg-ink text-xs text-white/70" translate="no">
+  <div class="container-x flex h-10 items-center justify-between gap-4">
+    <div class="flex min-w-0 items-center gap-4 sm:gap-5">
+      <span class="hidden items-center gap-2 md:inline-flex"><i class="fa-regular fa-calendar text-sky"></i><span x-text="date"></span></span>
+      <span class="inline-flex items-center gap-2 tabular-nums"><i class="fa-regular fa-clock text-sky"></i><span x-text="time">--:--:--</span></span>
+      <span class="inline-flex min-w-0 items-center gap-2" :title="weather.label">
+        <i class="fa-solid text-sky" :class="weather.icon"></i>
+        <span class="truncate"><span x-text="temp !== null ? temp + '°C' : '…'"></span><span class="hidden sm:inline"> <span x-text="weather.label"></span></span> · Timika</span>
+      </span>
+    </div>
+    <div class="flex shrink-0 items-center gap-3">
+      <div class="hidden items-center gap-1 sm:flex" aria-label="Media sosial">
+        <a href="#" target="_blank" rel="noopener noreferrer" aria-label="Instagram" title="Instagram" class="grid h-7 w-7 place-items-center rounded-md transition hover:bg-white/10 hover:text-white"><i class="fa-brands fa-instagram"></i></a>
+        <a href="#" target="_blank" rel="noopener noreferrer" aria-label="Facebook" title="Facebook" class="grid h-7 w-7 place-items-center rounded-md transition hover:bg-white/10 hover:text-white"><i class="fa-brands fa-facebook-f"></i></a>
+        <a href="#" target="_blank" rel="noopener noreferrer" aria-label="YouTube" title="YouTube" class="grid h-7 w-7 place-items-center rounded-md transition hover:bg-white/10 hover:text-white"><i class="fa-brands fa-youtube"></i></a>
+        <a href="#" target="_blank" rel="noopener noreferrer" aria-label="WhatsApp Channel" title="WhatsApp Channel" class="grid h-7 w-7 place-items-center rounded-md transition hover:bg-white/10 hover:text-white"><i class="fa-brands fa-whatsapp"></i></a>
+      </div>
+      <span class="hidden h-4 w-px bg-white/15 sm:block"></span>
+      <div class="flex items-center rounded-md bg-white/10 p-0.5" role="group" aria-label="Pilih bahasa">
+        <button type="button" @click="setLang('id')" :aria-pressed="lang === 'id'" :class="lang === 'id' ? 'bg-white text-ink' : 'text-white/70 hover:text-white'" class="rounded-md px-2.5 py-1 font-semibold transition">ID</button>
+        <button type="button" @click="setLang('en')" :aria-pressed="lang === 'en'" :class="lang === 'en' ? 'bg-white text-ink' : 'text-white/70 hover:text-white'" class="rounded-md px-2.5 py-1 font-semibold transition">EN</button>
+      </div>
+    </div>
+  </div>
+</div>
+<div id="google_translate_element" aria-hidden="true"></div>
+<header x-data="{ open: false, scrolled: false }" @scroll.window="scrolled = window.scrollY > 10"
+  :class="scrolled ? 'bg-surface/90 backdrop-blur shadow-sm' : 'bg-surface'"
+  class="sticky top-0 z-50 transition">
+  <div class="container-x flex h-20 items-center justify-between gap-4">
+    <a href="index.html" class="flex items-center gap-3">
+      <img src="assets/img/logo-ybm.png" alt="Logo PT. Yawiraya Bina Mandiri" class="h-10 w-auto">
+      <span class="hidden leading-tight sm:block">
+        <span class="block text-sm font-semibold tracking-tight text-navy">PT. Yawiraya Bina Mandiri</span>
+        <span class="block text-[11px] text-ink/50">General Contractor · Supplier</span>
+      </span>
+    </a>
+    <nav class="hidden items-center gap-1 rounded-md bg-white p-1 ring-1 ring-black/5 lg:flex" aria-label="Navigasi utama">
+      <a href="index.html" class="nav-link is-active">Beranda</a>
+      <a href="tentang.html" class="nav-link ">Tentang</a>
+      <a href="layanan.html" class="nav-link ">Layanan</a>
+      <a href="pengalaman.html" class="nav-link ">Pengalaman</a>
+      <a href="k3.html" class="nav-link ">K3</a>
+      <a href="armada.html" class="nav-link ">Armada</a>
+      <a href="kontak.html" class="nav-link ">Kontak</a>
+    </nav>
+    <div class="flex items-center gap-2">
+      <a href="tel:09013265824" class="hidden items-center gap-2 rounded-md bg-ink px-4 py-2.5 text-sm font-medium text-white transition hover:bg-navy md:inline-flex">
+        <i class="fa-solid fa-phone text-xs"></i> (0901) 3265824
+      </a>
+      <button @click="open = !open" class="grid h-11 w-11 place-items-center rounded-md bg-white ring-1 ring-black/5 lg:hidden" :aria-expanded="open" aria-label="Buka menu">
+        <i class="fa-solid" :class="open ? 'fa-xmark' : 'fa-bars'"></i>
+      </button>
+    </div>
+  </div>
+  <div x-show="open" x-collapse x-cloak @click.outside="open = false" class="border-t border-black/5 bg-white lg:hidden">
+    <nav class="container-x grid gap-1 py-4">
+      <a href="index.html" class="flex items-center justify-between rounded-md px-4 py-3 text-sm bg-navy text-white">Beranda<i class="fa-solid fa-arrow-right -rotate-45 text-xs opacity-60"></i></a>
+      <a href="tentang.html" class="flex items-center justify-between rounded-md px-4 py-3 text-sm hover:bg-surface">Tentang<i class="fa-solid fa-arrow-right -rotate-45 text-xs opacity-60"></i></a>
+      <a href="layanan.html" class="flex items-center justify-between rounded-md px-4 py-3 text-sm hover:bg-surface">Layanan<i class="fa-solid fa-arrow-right -rotate-45 text-xs opacity-60"></i></a>
+      <a href="pengalaman.html" class="flex items-center justify-between rounded-md px-4 py-3 text-sm hover:bg-surface">Pengalaman<i class="fa-solid fa-arrow-right -rotate-45 text-xs opacity-60"></i></a>
+      <a href="k3.html" class="flex items-center justify-between rounded-md px-4 py-3 text-sm hover:bg-surface">K3<i class="fa-solid fa-arrow-right -rotate-45 text-xs opacity-60"></i></a>
+      <a href="armada.html" class="flex items-center justify-between rounded-md px-4 py-3 text-sm hover:bg-surface">Armada<i class="fa-solid fa-arrow-right -rotate-45 text-xs opacity-60"></i></a>
+      <a href="kontak.html" class="flex items-center justify-between rounded-md px-4 py-3 text-sm hover:bg-surface">Kontak<i class="fa-solid fa-arrow-right -rotate-45 text-xs opacity-60"></i></a>
+    </nav>
+  </div>
+</header>
+<main id="main">
+
+  <!-- HERO -->
+  <section class="container-x pt-4">
+    <div class="relative overflow-hidden rounded-none">
+      <img src="assets/img/tim-lapangan.jpg" alt="Tim lapangan PT. Yawiraya Bina Mandiri" class="h-[340px] w-full object-cover object-[50%_35%] sm:h-[420px]">
+      <div class="absolute inset-0 bg-gradient-to-t from-ink/60 via-transparent to-ink/10"></div>
+      <div class="absolute inset-x-4 bottom-4 grid grid-cols-2 gap-2 lg:grid-cols-4">
+        <a href="layanan.html#kontraktor" class="glass-chip group"><span class="text-white/60">01</span><span class="flex-1 truncate">Konstruksi</span><i class="fa-solid fa-arrow-right -rotate-45 text-xs transition group-hover:rotate-0"></i></a>
+        <a href="layanan.html#kontraktor" class="glass-chip group"><span class="text-white/60">02</span><span class="flex-1 truncate">Scaffolding & Painting</span><i class="fa-solid fa-arrow-right -rotate-45 text-xs transition group-hover:rotate-0"></i></a>
+        <a href="layanan.html#tenaga-kerja" class="glass-chip group"><span class="text-white/60">03</span><span class="flex-1 truncate">Labour Supply</span><i class="fa-solid fa-arrow-right -rotate-45 text-xs transition group-hover:rotate-0"></i></a>
+        <a href="layanan.html#supplier" class="glass-chip group"><span class="text-white/60">04</span><span class="flex-1 truncate">General Supplier</span><i class="fa-solid fa-arrow-right -rotate-45 text-xs transition group-hover:rotate-0"></i></a>
+      </div>
+    </div>
+
+    <div class="grid gap-4 py-4 lg:grid-cols-12">
+      <div class="flex flex-col justify-between rounded-none bg-white p-8 lg:col-span-6 lg:p-10">
+        <div>
+          <span class="inline-flex items-center gap-2 rounded-none bg-white text-ink/70 ring-1 ring-black/5 px-3 py-1 text-xs font-medium"><span class="h-1.5 w-1.5 rounded-full bg-sky"></span>Sejak 1996 · Timika, Papua</span>
+          <h1 class="display mt-6 text-5xl sm:text-6xl xl:text-7xl">Yawiraya<br>Bina Mandiri<br><span class="inline-flex items-center gap-4 text-navy">PT. YBM <a href="tentang.html" class="arrow-btn h-12 w-12 text-base sm:h-14 sm:w-14 border border-ink/20 text-ink hover:bg-ink hover:text-white" aria-label="Selengkapnya"><i class="fa-solid fa-arrow-right -rotate-45"></i></a> <a href="layanan.html" class="arrow-btn h-12 w-12 text-base sm:h-14 sm:w-14 bg-navy text-white hover:bg-sky" aria-label="Selengkapnya"><i class="fa-solid fa-arrow-right -rotate-45"></i></a></span></h1>
+        </div>
+        <div class="mt-10 grid gap-6 sm:grid-cols-2">
+          <p class="text-sm font-semibold">Kontraktor Putra Daerah Papua</p>
+          <p class="text-sm leading-relaxed text-ink/60">Konstruksi, pemeliharaan fasilitas &amp; bangunan, penyediaan tenaga kerja dan perdagangan umum — dengan mutu yang berkualitas.</p>
+        </div>
+        <div class="mt-8 flex flex-wrap gap-3">
+          <a href="pengalaman.html" class="btn-ghost">Pengalaman Proyek</a>
+          <a href="kontak.html" class="btn-solid">Hubungi Kami <i class="fa-solid fa-arrow-right text-xs"></i></a>
+        </div>
+      </div>
+
+      <div class="grid gap-4 sm:grid-cols-2 lg:col-span-6">
+        <div class="flex flex-col overflow-hidden rounded-none bg-white">
+          <div class="bg-navy p-6 text-white">
+            <p class="text-right text-xs text-white/60">5 Mei 2006</p>
+            <p class="mt-4 text-right text-6xl font-light tracking-tight">2006</p>
+          </div>
+          <div class="flex flex-1 flex-col justify-between p-6">
+            <div>
+              <div class="flex items-center justify-between text-xs">
+                <span class="font-medium">Tonggak</span>
+                <span class="rounded-none bg-surface px-2 py-0.5">CV → PT <i class="fa-solid fa-circle-check text-sky"></i></span>
+              </div>
+              <p class="mt-4 text-lg font-semibold leading-snug">CV. Yawi Raya resmi menjadi PT. Yawiraya Bina Mandiri</p>
+            </div>
+            <p class="mt-4 text-xs leading-relaxed text-ink/50">Berawal dari inkubator bisnis Social Local Development (SLD) PT. Freeport Indonesia pada tahun 1996.</p>
+          </div>
+        </div>
+        <div class="grid gap-4">
+          <div class="relative overflow-hidden rounded-none">
+            <img src="assets/img/scaffolding-gazebo.jpg" alt="Pekerja scaffolding bersertifikat" class="h-full min-h-[220px] w-full object-cover">
+            <span class="absolute right-3 top-3 rounded-none bg-white/90 px-3 py-1 text-[11px] font-medium">Scaffolder Bersertifikat</span>
+          </div>
+          <div class="relative overflow-hidden rounded-none bg-ink">
+            <img src="assets/img/bulan-k3.jpg" alt="Kegiatan Bulan K3 Nasional" class="h-full min-h-[180px] w-full object-cover opacity-70">
+            <span class="absolute bottom-3 left-3 rounded-none bg-white/90 px-3 py-1 text-[11px] font-medium"><i class="fa-solid fa-helmet-safety text-navy"></i> Budaya K3</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TENTANG -->
+  <section class="container-x py-16 lg:py-24">
+    <div class="grid gap-10 lg:grid-cols-12">
+      <div class="lg:col-span-5">
+        <span class="inline-flex items-center gap-2 rounded-none bg-white text-ink/70 ring-1 ring-black/5 px-3 py-1 text-xs font-medium"><span class="h-1.5 w-1.5 rounded-full bg-sky"></span>Tentang YBM</span>
+        <p class="mt-6 text-lg font-medium">Kontraktor lokal yang handal,<br><span class="text-ink/50">memberdayakan Orang Asli Papua</span></p>
+      </div>
+      <div class="text-right lg:col-span-7">
+        <p class="display text-5xl sm:text-6xl lg:text-7xl">Konstruksi</p>
+        <p class="display mt-2 inline-flex items-center gap-4 text-5xl text-navy sm:text-6xl lg:text-7xl">Tenaga Kerja <a href="layanan.html" class="arrow-btn h-12 w-12 text-base sm:h-14 sm:w-14 bg-navy text-white hover:bg-sky" aria-label="Selengkapnya"><i class="fa-solid fa-arrow-right -rotate-45"></i></a></p>
+      </div>
+    </div>
+    <div class="mt-14 grid gap-6 border-t border-ink/10 pt-10 lg:grid-cols-12">
+      <h2 class="text-3xl font-medium tracking-tight lg:col-span-5">Visi Kami</h2>
+      <p class="text-lg leading-relaxed text-ink/70 lg:col-span-7">Menjadi salah satu Perusahaan Kontraktor Putra Daerah Papua terbaik dan menghasilkan Tenaga Kerja berskala Nasional, lebih khusus Tenaga Kerja lokal Papua yang berkualitas dan berhasil guna — bergerak di bidang Jasa Konstruksi, perawatan bangunan &amp; Jasa pemasok Tenaga Kerja.</p>
+    </div>
+
+    <!-- IMPACT -->
+    <div class="mt-12 grid gap-4 lg:grid-cols-12">
+      <div class="overflow-hidden rounded-none lg:col-span-4">
+        <img src="assets/img/underground-ruc.jpg" alt="Tenaga kerja underground" class="h-full min-h-[320px] w-full object-cover">
+      </div>
+      <div class="relative flex flex-col justify-between overflow-hidden rounded-none bg-navy p-8 text-white lg:col-span-4">
+        <p class="display text-4xl text-white sm:text-5xl">YBM Impact</p>
+        <div class="mt-10 rounded-none bg-white/10 p-5 ring-1 ring-white/15 backdrop-blur">
+          <p class="flex items-center gap-2 text-xs text-white/70"><i class="fa-solid fa-users"></i> Tenaga Kerja Terlatih</p>
+          <p class="mt-3 text-5xl font-light tracking-tight" x-data="counter(184)" x-intersect.once="start()" x-text="value">184</p>
+          <p class="mt-2 text-xs text-white/60">Personel ahli, bersertifikat &amp; manpower lapangan</p>
+        </div>
+      </div>
+      <div class="grid gap-4 sm:grid-cols-2 lg:col-span-4 lg:grid-cols-1">
+        <div class="rounded-none bg-white p-6">
+          <div class="flex items-start justify-between gap-4">
+            <p class="text-sm font-medium">Pengalaman</p>
+            <p class="max-w-[10rem] text-right text-xs text-ink/50">Melayani perusahaan swasta &amp; pemerintah lokal sejak 1996</p>
+          </div>
+          <p class="mt-4 text-5xl font-light tracking-tight"><span x-data="counter(30)" x-intersect.once="start()" x-text="value">30</span>+ <span class="text-base text-ink/50">tahun</span></p>
+        </div>
+        <div class="rounded-none bg-white p-6">
+          <div class="flex items-start justify-between gap-4">
+            <p class="text-sm font-medium">Scaffolding</p>
+            <p class="max-w-[10rem] text-right text-xs text-ink/50">Set perancah Galvanix dalam kondisi baik</p>
+          </div>
+          <p class="mt-4 text-5xl font-light tracking-tight"><span x-data="counter(600)" x-intersect.once="start()" x-text="value">600</span> <span class="text-base text-ink/50">set</span></p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- LAYANAN -->
+  <section class="bg-white py-16 lg:py-24">
+    <div class="container-x">
+      <div class="flex flex-wrap items-end justify-between gap-6">
+        <div>
+          <span class="inline-flex items-center gap-2 rounded-none bg-white text-ink/70 ring-1 ring-black/5 px-3 py-1 text-xs font-medium"><span class="h-1.5 w-1.5 rounded-full bg-sky"></span>Product &amp; Services</span>
+          <h2 class="display mt-5 text-5xl sm:text-6xl">Layanan YBM</h2>
+        </div>
+        <p class="max-w-md text-ink/60">Empat unit usaha utama yang kami kerjakan untuk mendukung operasional mitra di area dataran rendah (lowland) hingga dataran tinggi (highland).</p>
+      </div>
+      <div class="mt-12 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        
+        <a href="layanan.html#kontraktor" class="group flex flex-col overflow-hidden rounded-none bg-surface transition hover:-translate-y-1 hover:shadow-xl">
+          <div class="relative h-44 overflow-hidden"><img src="assets/img/scaffolding-barrack.jpg" alt="Contractors" class="h-full w-full object-cover transition duration-500 group-hover:scale-105"><span class="absolute left-4 top-4 rounded-none bg-white/90 px-3 py-1 text-xs">01</span></div>
+          <div class="flex flex-1 flex-col p-6">
+            <i class="fa-solid fa-helmet-safety text-xl text-navy"></i>
+            <h3 class="mt-4 text-xl font-semibold tracking-tight">Contractors</h3>
+            <p class="mt-2 flex-1 text-sm leading-relaxed text-ink/60">Konstruksi jalan, jembatan, gedung, drainase, pemeliharaan fasilitas & proyek pengelasan.</p>
+            <span class="mt-6 inline-flex h-10 w-10 items-center justify-center rounded-md border border-ink/15 transition group-hover:border-navy group-hover:bg-navy group-hover:text-white"><i class="fa-solid fa-arrow-right -rotate-45 text-sm"></i></span>
+          </div>
+        </a>
+        <a href="layanan.html#tenaga-kerja" class="group flex flex-col overflow-hidden rounded-none bg-surface transition hover:-translate-y-1 hover:shadow-xl">
+          <div class="relative h-44 overflow-hidden"><img src="assets/img/underground-ruc-2.jpg" alt="Labour Supplier" class="h-full w-full object-cover transition duration-500 group-hover:scale-105"><span class="absolute left-4 top-4 rounded-none bg-white/90 px-3 py-1 text-xs">02</span></div>
+          <div class="flex flex-1 flex-col p-6">
+            <i class="fa-solid fa-people-group text-xl text-navy"></i>
+            <h3 class="mt-4 text-xl font-semibold tracking-tight">Labour Supplier</h3>
+            <p class="mt-2 flex-1 text-sm leading-relaxed text-ink/60">Tenaga konstruksi & underground: mason, carpenter, welder, rigger, miner, operator alat berat.</p>
+            <span class="mt-6 inline-flex h-10 w-10 items-center justify-center rounded-md border border-ink/15 transition group-hover:border-navy group-hover:bg-navy group-hover:text-white"><i class="fa-solid fa-arrow-right -rotate-45 text-sm"></i></span>
+          </div>
+        </a>
+        <a href="layanan.html#conveyor" class="group flex flex-col overflow-hidden rounded-none bg-surface transition hover:-translate-y-1 hover:shadow-xl">
+          <div class="relative h-44 overflow-hidden"><img src="assets/img/acetylene-plant.jpg" alt="Proyek Conveyor" class="h-full w-full object-cover transition duration-500 group-hover:scale-105"><span class="absolute left-4 top-4 rounded-none bg-white/90 px-3 py-1 text-xs">03</span></div>
+          <div class="flex flex-1 flex-col p-6">
+            <i class="fa-solid fa-gears text-xl text-navy"></i>
+            <h3 class="mt-4 text-xl font-semibold tracking-tight">Proyek Conveyor</h3>
+            <p class="mt-2 flex-1 text-sm leading-relaxed text-ink/60">Penggantian roller, pulley, gear box, chute liner, re-lagging & belt splices.</p>
+            <span class="mt-6 inline-flex h-10 w-10 items-center justify-center rounded-md border border-ink/15 transition group-hover:border-navy group-hover:bg-navy group-hover:text-white"><i class="fa-solid fa-arrow-right -rotate-45 text-sm"></i></span>
+          </div>
+        </a>
+        <a href="layanan.html#supplier" class="group flex flex-col overflow-hidden rounded-none bg-surface transition hover:-translate-y-1 hover:shadow-xl">
+          <div class="relative h-44 overflow-hidden"><img src="assets/img/bulan-k3.jpg" alt="General Supplier" class="h-full w-full object-cover transition duration-500 group-hover:scale-105"><span class="absolute left-4 top-4 rounded-none bg-white/90 px-3 py-1 text-xs">04</span></div>
+          <div class="flex flex-1 flex-col p-6">
+            <i class="fa-solid fa-boxes-stacked text-xl text-navy"></i>
+            <h3 class="mt-4 text-xl font-semibold tracking-tight">General Supplier</h3>
+            <p class="mt-2 flex-1 text-sm leading-relaxed text-ink/60">Produk 3M: APD, respirator, fall protection, alat ukur kebisingan & kualitas udara.</p>
+            <span class="mt-6 inline-flex h-10 w-10 items-center justify-center rounded-md border border-ink/15 transition group-hover:border-navy group-hover:bg-navy group-hover:text-white"><i class="fa-solid fa-arrow-right -rotate-45 text-sm"></i></span>
+          </div>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- MITRA -->
+  <section class="overflow-hidden border-y border-ink/10 py-8" aria-label="Mitra dan klien">
+    <div class="marquee flex w-max gap-12 whitespace-nowrap text-2xl font-light tracking-tight text-ink/40">
+      <span class="flex items-center gap-12">PT. Freeport Indonesia<i class="fa-solid fa-asterisk text-sm text-sky"></i></span><span class="flex items-center gap-12">PT. RUC Cementation Indonesia<i class="fa-solid fa-asterisk text-sm text-sky"></i></span><span class="flex items-center gap-12">PT. Sandvik SMC<i class="fa-solid fa-asterisk text-sm text-sky"></i></span><span class="flex items-center gap-12">Bandara Mozes Kilangin<i class="fa-solid fa-asterisk text-sm text-sky"></i></span><span class="flex items-center gap-12">Dinas PU Mimika<i class="fa-solid fa-asterisk text-sm text-sky"></i></span><span class="flex items-center gap-12">Dinas Pemukiman<i class="fa-solid fa-asterisk text-sm text-sky"></i></span><span class="flex items-center gap-12">Yayasan Pendidikan Jayawijaya<i class="fa-solid fa-asterisk text-sm text-sky"></i></span><span class="flex items-center gap-12">PT. Probesco Disatama<i class="fa-solid fa-asterisk text-sm text-sky"></i></span><span class="flex items-center gap-12">LNG Genting Oil<i class="fa-solid fa-asterisk text-sm text-sky"></i></span><span class="flex items-center gap-12">PT. Freeport Indonesia<i class="fa-solid fa-asterisk text-sm text-sky"></i></span><span class="flex items-center gap-12">PT. RUC Cementation Indonesia<i class="fa-solid fa-asterisk text-sm text-sky"></i></span><span class="flex items-center gap-12">PT. Sandvik SMC<i class="fa-solid fa-asterisk text-sm text-sky"></i></span><span class="flex items-center gap-12">Bandara Mozes Kilangin<i class="fa-solid fa-asterisk text-sm text-sky"></i></span><span class="flex items-center gap-12">Dinas PU Mimika<i class="fa-solid fa-asterisk text-sm text-sky"></i></span><span class="flex items-center gap-12">Dinas Pemukiman<i class="fa-solid fa-asterisk text-sm text-sky"></i></span><span class="flex items-center gap-12">Yayasan Pendidikan Jayawijaya<i class="fa-solid fa-asterisk text-sm text-sky"></i></span><span class="flex items-center gap-12">PT. Probesco Disatama<i class="fa-solid fa-asterisk text-sm text-sky"></i></span><span class="flex items-center gap-12">LNG Genting Oil<i class="fa-solid fa-asterisk text-sm text-sky"></i></span>
+    </div>
+  </section>
+
+  <!-- PENGALAMAN -->
+  <section class="container-x py-16 lg:py-24">
+    <div class="grid gap-10 lg:grid-cols-12">
+      <div class="lg:col-span-5">
+        <span class="inline-flex items-center gap-2 rounded-none bg-white text-ink/70 ring-1 ring-black/5 px-3 py-1 text-xs font-medium"><span class="h-1.5 w-1.5 rounded-full bg-sky"></span>Pengalaman Perusahaan</span>
+        <h2 class="display mt-5 text-5xl sm:text-6xl">Proyek<br><span class="inline-flex items-center gap-4 text-navy">Terpilih <a href="pengalaman.html" class="arrow-btn h-12 w-12 text-base bg-navy text-white hover:bg-sky" aria-label="Selengkapnya"><i class="fa-solid fa-arrow-right -rotate-45"></i></a></span></h2>
+        <p class="mt-6 max-w-sm text-ink/60">Dari scaffolding &amp; pengecatan di Tembagapura, carpenter &amp; mason di Kuala Kencana, hingga labor supply underground.</p>
+      </div>
+      <div class="grid gap-4 sm:grid-cols-2 lg:col-span-7">
+        
+        <figure class="group relative overflow-hidden rounded-none">
+          <img src="assets/img/scaffolding-barrack.jpg" alt="Barrack BQ Garden, Tembagapura" class="h-64 w-full object-cover transition duration-500 group-hover:scale-105">
+          <figcaption class="absolute inset-x-3 bottom-3 rounded-none bg-white/95 p-4">
+            <p class="text-xs text-navy">Scaffolding & Painting</p><p class="mt-1 text-sm font-medium leading-snug">Barrack BQ Garden, Tembagapura</p>
+          </figcaption>
+        </figure>
+        <figure class="group relative overflow-hidden rounded-none">
+          <img src="assets/img/baliho-pon.jpg" alt="Baliho Atrium persiapan PON XX, Kuala Kencana" class="h-64 w-full object-cover transition duration-500 group-hover:scale-105">
+          <figcaption class="absolute inset-x-3 bottom-3 rounded-none bg-white/95 p-4">
+            <p class="text-xs text-navy">Carpenter & Mason</p><p class="mt-1 text-sm font-medium leading-snug">Baliho Atrium persiapan PON XX, Kuala Kencana</p>
+          </figcaption>
+        </figure>
+        <figure class="group relative overflow-hidden rounded-none">
+          <img src="assets/img/iphmc-fogging.jpg" alt="IPHMC — Industrial Public Health Malaria Control" class="h-64 w-full object-cover transition duration-500 group-hover:scale-105">
+          <figcaption class="absolute inset-x-3 bottom-3 rounded-none bg-white/95 p-4">
+            <p class="text-xs text-navy">Labor Supplier</p><p class="mt-1 text-sm font-medium leading-snug">IPHMC — Industrial Public Health Malaria Control</p>
+          </figcaption>
+        </figure>
+        <figure class="group relative overflow-hidden rounded-none">
+          <img src="assets/img/bus-karyawan.jpg" alt="Facilities Management Kuala Kencana (RW-A & RW-B)" class="h-64 w-full object-cover transition duration-500 group-hover:scale-105">
+          <figcaption class="absolute inset-x-3 bottom-3 rounded-none bg-white/95 p-4">
+            <p class="text-xs text-navy">Rental Bus</p><p class="mt-1 text-sm font-medium leading-snug">Facilities Management Kuala Kencana (RW-A & RW-B)</p>
+          </figcaption>
+        </figure>
+      </div>
+    </div>
+  </section>
+
+  <!-- PIMPINAN -->
+  <section class="container-x">
+    <div class="flex flex-wrap items-end justify-between gap-6">
+      <div><span class="inline-flex items-center gap-2 rounded-none bg-white text-ink/70 ring-1 ring-black/5 px-3 py-1 text-xs font-medium"><span class="h-1.5 w-1.5 rounded-full bg-sky"></span>Pimpinan Perusahaan</span><h2 class="display mt-5 text-4xl sm:text-5xl">Tim Pimpinan</h2></div>
+      <a href="tentang.html#pimpinan" class="btn-ghost">Selengkapnya <i class="fa-solid fa-arrow-right text-xs"></i></a>
+    </div>
+    <div class="mt-10 grid gap-4 sm:grid-cols-3">
+      
+      <div class="group overflow-hidden rounded-none bg-white">
+        <div class="aspect-[4/5] overflow-hidden bg-surface"><img src="assets/img/sekinus-murib.jpg" alt="Sekinus Murib" class="portrait h-full w-full object-cover object-top grayscale transition duration-500 group-hover:grayscale-0"></div>
+        <div class="flex items-center justify-between p-5"><div><p class="font-semibold">Sekinus Murib</p><p class="text-sm text-ink/50">Pemilik & Pendiri</p></div><i class="fa-solid fa-arrow-right -rotate-45 text-ink/30"></i></div>
+      </div>
+      <div class="group overflow-hidden rounded-none bg-white">
+        <div class="aspect-[4/5] overflow-hidden bg-surface"><img src="assets/img/yance-murib.jpg" alt="Yance Murib" class="portrait h-full w-full object-cover object-top grayscale transition duration-500 group-hover:grayscale-0"></div>
+        <div class="flex items-center justify-between p-5"><div><p class="font-semibold">Yance Murib</p><p class="text-sm text-ink/50">Komisaris</p></div><i class="fa-solid fa-arrow-right -rotate-45 text-ink/30"></i></div>
+      </div>
+      <div class="group overflow-hidden rounded-none bg-white">
+        <div class="aspect-[4/5] overflow-hidden bg-surface"><img src="assets/img/herman-pai.jpg" alt="Herman R. Pai" class="portrait h-full w-full object-cover object-top grayscale transition duration-500 group-hover:grayscale-0"></div>
+        <div class="flex items-center justify-between p-5"><div><p class="font-semibold">Herman R. Pai</p><p class="text-sm text-ink/50">General Manager / PJO</p></div><i class="fa-solid fa-arrow-right -rotate-45 text-ink/30"></i></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="container-x pt-16 lg:pt-24">
+    <div class="relative overflow-hidden rounded-none bg-navy px-8 py-14 text-white sm:px-14">
+      <img src="assets/img/logo-ybm.png" alt="" aria-hidden="true" class="pointer-events-none absolute -right-10 -top-10 w-80 opacity-10">
+      <div class="relative grid items-end gap-8 lg:grid-cols-2">
+        <h2 class="display text-4xl text-white sm:text-5xl">Siap mendukung proyek Anda di Papua.</h2>
+        <div class="lg:text-right">
+          <p class="text-white/70">Konsultasikan kebutuhan konstruksi, tenaga kerja, rental unit, maupun supply peralatan K3.</p>
+          <div class="mt-6 flex flex-wrap gap-3 lg:justify-end">
+            <a href="kontak.html" class="inline-flex items-center gap-2 rounded-md bg-white px-6 py-3 text-sm font-medium text-navy hover:bg-sky hover:text-white">Lokasi &amp; Kontak <i class="fa-solid fa-arrow-right text-xs"></i></a>
+            <a href="mailto:pt.yawiraya@yahoo.com" class="inline-flex items-center gap-2 rounded-md px-6 py-3 text-sm font-medium ring-1 ring-white/30 hover:bg-white/10"><i class="fa-regular fa-envelope"></i> Email</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer class="mt-24 bg-ink text-white">
+  <div class="container-x flex flex-col items-center py-14 text-center">
+    <!-- Baris 1: identitas -->
+    <a href="index.html" class="flex flex-col items-center gap-4">
+      <span class="bg-white p-3"><img src="assets/img/logo-ybm.png" alt="Logo PT. Yawiraya Bina Mandiri" class="h-12 w-auto"></span>
+      <span>
+        <span class="block text-lg font-semibold">PT. Yawiraya Bina Mandiri</span>
+        <span class="block text-xs text-white/50">General Contractor | Supplier | Perdagangan Umum</span>
+      </span>
+    </a>
+    <p class="mt-4 max-w-xl text-sm leading-relaxed text-white/60">Jl. Pendidikan Jalur 1-5a, Otomona, Mimika Baru, Timika, Papua 99910 · <a href="tel:09013265824" class="hover:text-sky">(0901) 3265824</a> · <a href="mailto:pt.yawiraya@yahoo.com" class="hover:text-sky">pt.yawiraya@yahoo.com</a></p>
+
+    <!-- Baris 2: menu & media sosial -->
+    <div class="mt-10 flex w-full flex-col items-center gap-6 border-t border-white/10 pt-10">
+      <nav class="flex flex-wrap justify-center gap-x-6 gap-y-2 text-sm text-white/70" aria-label="Navigasi footer">
+        <a href="index.html" class="hover:text-sky">Beranda</a>
+        <a href="tentang.html" class="hover:text-sky">Tentang</a>
+        <a href="layanan.html" class="hover:text-sky">Layanan</a>
+        <a href="pengalaman.html" class="hover:text-sky">Pengalaman</a>
+        <a href="k3.html" class="hover:text-sky">K3</a>
+        <a href="armada.html" class="hover:text-sky">Armada</a>
+        <a href="kontak.html" class="hover:text-sky">Kontak</a>
+      </nav>
+      <div class="flex items-center gap-3" aria-label="Media sosial">
+        <a href="#" target="_blank" rel="noopener noreferrer" aria-label="Instagram" title="Instagram" class="grid h-11 w-11 place-items-center rounded-md bg-white/10 text-white/80 transition hover:bg-sky hover:text-white"><i class="fa-brands fa-instagram"></i></a>
+        <a href="#" target="_blank" rel="noopener noreferrer" aria-label="Facebook" title="Facebook" class="grid h-11 w-11 place-items-center rounded-md bg-white/10 text-white/80 transition hover:bg-sky hover:text-white"><i class="fa-brands fa-facebook-f"></i></a>
+        <a href="#" target="_blank" rel="noopener noreferrer" aria-label="YouTube" title="YouTube" class="grid h-11 w-11 place-items-center rounded-md bg-white/10 text-white/80 transition hover:bg-sky hover:text-white"><i class="fa-brands fa-youtube"></i></a>
+        <a href="#" target="_blank" rel="noopener noreferrer" aria-label="WhatsApp Channel" title="WhatsApp Channel" class="grid h-11 w-11 place-items-center rounded-md bg-white/10 text-white/80 transition hover:bg-sky hover:text-white"><i class="fa-brands fa-whatsapp"></i></a>
+      </div>
+    </div>
+
+    <!-- Baris 3: hak cipta & powered by -->
+    <div class="mt-10 flex w-full flex-col items-center gap-3 border-t border-white/10 pt-6 text-xs text-white/50">
+      <div class="flex flex-wrap items-center justify-center gap-x-4 gap-y-2">
+        <p>&copy; <span x-data x-text="new Date().getFullYear()">2026</span> PT. Yawiraya Bina Mandiri. All Rights Reserved.</p>
+        <a href="admin/login.html" class="inline-flex items-center gap-1.5 rounded-md bg-white/10 px-3 py-1.5 font-medium text-white/80 transition hover:bg-sky hover:text-white"><i class="fa-solid fa-right-to-bracket text-[10px]"></i> Masuk</a>
+      </div>
+      <a href="https://nokensoft.com" target="_blank" rel="noopener noreferrer" class="group inline-flex items-center gap-2 hover:text-white">
+        Powered by <img src="assets/img/nokensoft.png" alt="Logo Nokensoft" class="h-5 w-auto transition group-hover:scale-110"> <span class="font-medium text-white/80 group-hover:text-sky">Nokensoft.com</span>
+      </a>
+    </div>
+  </div>
+</footer>
+<script defer src="https://translate.google.com/translate_a/element.js?cb=googleTranslateInit"></script>
+<a href="#" x-data="{ show: false }" @scroll.window="show = window.scrollY > 600" x-show="show" x-transition x-cloak
+  class="fixed bottom-6 right-6 z-40 grid h-12 w-12 place-items-center rounded-md bg-navy text-white shadow-lg hover:bg-sky" aria-label="Kembali ke atas">
+  <i class="fa-solid fa-arrow-up"></i>
+</a>
+</body>
+</html>

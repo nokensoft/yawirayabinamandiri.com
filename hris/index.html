@@ -1,0 +1,1406 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HRIS &amp; Payroll — PT. Yawiraya Bina Mandiri</title>
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="icon" type="image/png" href="../assets/img/logo-ybm.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+  <script src="https://cdn.tailwindcss.com/3.4.5"></script>
+  <script src="../assets/js/tailwind.config.js"></script>
+  <link rel="stylesheet" href="../assets/css/style.css">
+  <style type="text/tailwindcss">
+    @layer components {
+      .card { @apply bg-white ring-1 ring-black/5; }
+      .input { @apply w-full rounded-md border-0 bg-white px-3 py-2.5 text-sm ring-1 ring-black/10 placeholder:text-ink/40 focus:ring-2 focus:ring-navy disabled:bg-surface disabled:text-ink/50; }
+      .label { @apply mb-1.5 block text-xs font-medium text-ink/60; }
+      .btn { @apply inline-flex items-center justify-center gap-2 rounded-md px-4 py-2.5 text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-50; }
+      .btn-sm { @apply px-3 py-1.5 text-xs; }
+      .btn-primary { @apply btn bg-navy text-white hover:bg-sky; }
+      .btn-dark { @apply btn bg-ink text-white hover:bg-navy; }
+      .btn-light { @apply btn bg-white text-ink ring-1 ring-black/10 hover:bg-surface; }
+      .btn-ok { @apply btn bg-emerald-600 text-white hover:bg-emerald-700; }
+      .btn-danger { @apply btn bg-red-600 text-white hover:bg-red-700; }
+      .btn-icon { @apply inline-grid h-8 w-8 place-items-center rounded-md text-ink/50 transition hover:bg-surface hover:text-ink; }
+      .badge { @apply inline-flex items-center gap-1.5 whitespace-nowrap px-2 py-0.5 text-xs font-medium ring-1 ring-inset; }
+      .th { @apply whitespace-nowrap px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-ink/40; }
+      .td { @apply px-4 py-3 align-middle; }
+      .side-link { @apply flex items-center gap-3 rounded-md px-3 py-2 text-sm text-white/60 transition hover:bg-white/5 hover:text-white; }
+      .side-link.is-active { @apply bg-white/10 text-white; }
+      .tab { @apply whitespace-nowrap border-b-2 border-transparent px-1 pb-3 text-sm text-ink/50 transition hover:text-ink; }
+      .tab.is-active { @apply border-navy font-medium text-navy; }
+      .seg { @apply rounded-md px-3 py-1.5 text-xs font-medium transition; }
+      .stat { @apply mt-3 text-3xl font-light tracking-tight tabular-nums; }
+      .modal-wrap { @apply fixed inset-0 z-[60] flex items-start justify-center overflow-y-auto bg-ink/60 p-4 sm:p-8; }
+      .modal { @apply card relative my-auto w-full shadow-2xl; }
+    }
+  </style>
+  <style>
+    .cell { width: 30px; min-width: 30px; height: 28px; font-size: 10px; }
+    @keyframes ping-in { from { background: #fef3c7; } to { background: transparent; } }
+    .flash { animation: ping-in 3s ease-out; }
+    @keyframes scanline { 0% { top: 8%; } 50% { top: 85%; } 100% { top: 8%; } }
+    .scanline { animation: scanline 1s ease-in-out infinite; }
+  </style>
+  <script src="assets/payroll-engine.js"></script>
+  <script src="assets/hris-data.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/@alpinejs/focus@3.14.1/dist/cdn.min.js"></script>
+  <script defer src="assets/hris.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.1/dist/cdn.min.js"></script>
+</head>
+<body class="bg-surface font-sans text-ink antialiased" x-data="hris" x-cloak>
+<template x-if="db">
+<div>
+
+<!-- =============================================================== SIDEBAR -->
+<div x-show="sidebar" x-transition.opacity @click="sidebar = false" class="fixed inset-0 z-40 bg-ink/50 lg:hidden"></div>
+<aside id="sidebar" :class="sidebar ? 'translate-x-0' : (collapsed ? '-translate-x-full' : '-translate-x-full lg:translate-x-0')" class="fixed inset-y-0 left-0 z-50 flex w-64 flex-col bg-ink text-white transition-transform duration-300" aria-label="Sidebar" :inert="!sidebarVisible">
+  <div class="flex h-16 shrink-0 items-center border-b border-white/10 pr-2">
+    <a :href="'#' + home()" class="flex h-full min-w-0 flex-1 items-center gap-3 px-5">
+      <span class="bg-white p-1"><img src="../assets/img/logo-ybm.png" alt="Logo YBM" class="h-7 w-auto"></span>
+      <span class="leading-tight"><span class="block text-sm font-semibold">YBM HRIS</span><span class="block truncate text-[11px] text-white/40">Absensi &amp; Payroll</span></span>
+    </a>
+    <button type="button" @click="sidebar = false" class="grid h-9 w-9 place-items-center rounded-md text-white/60 hover:bg-white/10 lg:hidden" aria-label="Tutup menu"><i class="fa-solid fa-xmark"></i></button>
+  </div>
+  <div class="mx-3 mt-4 flex items-center gap-3 rounded-md bg-white/5 p-3">
+    <span class="grid h-9 w-9 shrink-0 place-items-center rounded-md text-sm" :class="roleInfo.cls"><i class="fa-solid" :class="roleInfo.icon"></i></span>
+    <span class="min-w-0 leading-tight"><span class="block truncate text-sm font-medium" x-text="session.nama"></span><span class="block truncate text-[11px] text-white/50" x-text="roleInfo.nama"></span></span>
+  </div>
+  <nav class="flex-1 space-y-5 overflow-y-auto px-3 py-5" aria-label="Menu">
+    <template x-for="grp in menu">
+      <div x-show="grp[1].some(r => allowed(r))">
+        <p class="px-3 pb-2 text-[10px] font-semibold uppercase tracking-widest text-white/30" x-text="grp[0]"></p>
+        <template x-for="r in grp[1].filter(r => allowed(r))">
+          <a :href="'#' + r" class="side-link" :class="route === r && 'is-active'" :aria-current="route === r ? 'page' : null">
+            <i class="fa-solid w-4 text-center" :class="routes[r][1]"></i>
+            <span class="flex-1" x-text="routes[r][0]"></span>
+            <span x-show="r === 'lembur' && can('ot.approve') && otSummary.n" class="bg-amber-500 px-1.5 text-[10px] font-semibold text-white" x-text="otSummary.n"></span>
+            <span x-show="r === 'pengajuan' && db.leaves.filter(l => l.status === 'Menunggu').length" class="bg-amber-500 px-1.5 text-[10px] font-semibold text-white" x-text="db.leaves.filter(l => l.status === 'Menunggu').length"></span>
+            <span x-show="r === 'payroll' && db.runs.some(x => (x.status === 'Diajukan' && can('payroll.approve')) || (x.status === 'Disetujui' && can('payroll.pay')))" class="bg-amber-500 px-1.5 text-[10px] font-semibold text-white">!</span>
+          </a>
+        </template>
+      </div>
+    </template>
+  </nav>
+  <div class="space-y-2 border-t border-white/10 p-4">
+    <a href="mesin.html" target="_blank" rel="noopener" class="side-link"><i class="fa-solid fa-barcode w-4 text-center"></i> Simulator Scanner Kartu</a>
+    <a href="../index.html" target="_blank" rel="noopener" class="side-link"><i class="fa-solid fa-arrow-up-right-from-square w-4 text-center"></i> Lihat Website</a>
+    <a href="https://nokensoft.com" target="_blank" rel="noopener noreferrer" class="group flex items-center gap-2 px-3 pt-1 text-[11px] text-white/40 hover:text-white">Powered by <img src="../assets/img/nokensoft.png" alt="Logo Nokensoft" class="h-4 w-auto"> <span class="font-medium text-white/60 group-hover:text-sky">Nokensoft.com</span></a>
+  </div>
+</aside>
+
+<!-- =============================================================== MAIN -->
+<div class="transition-[padding] duration-300" :class="collapsed ? 'lg:pl-0' : 'lg:pl-64'">
+  <header class="sticky top-0 z-30 flex h-16 items-center gap-3 border-b border-black/5 bg-white/90 px-4 backdrop-blur sm:px-6">
+    <button @click="toggleSidebar()" class="btn-icon" aria-controls="sidebar" :aria-label="sidebarVisible ? 'Sembunyikan menu' : 'Tampilkan menu'"><i class="fa-solid fa-bars lg:hidden"></i><i class="fa-solid hidden lg:inline" :class="collapsed ? 'fa-indent' : 'fa-outdent'"></i></button>
+    <div class="min-w-0 flex-1">
+      <p class="truncate text-sm font-semibold" x-text="pageTitle"></p>
+      <p class="hidden text-xs text-ink/40 sm:block"><span x-text="dateLong"></span> · <span class="tabular-nums" x-text="clock"></span> · Periode berjalan <span class="font-medium text-ink/60" x-text="pLabel(curPeriod)"></span></p>
+    </div>
+    <span class="hidden items-center gap-1.5 bg-amber-50 px-2 py-1 text-[11px] font-medium text-amber-800 ring-1 ring-inset ring-amber-600/20 md:inline-flex"><i class="fa-solid fa-flask"></i> Prototype · data dummy</span>
+    <div class="relative" @click.outside="userMenu = false">
+      <button @click="userMenu = !userMenu" class="flex items-center gap-2 rounded-md p-1 hover:bg-surface" :aria-expanded="userMenu" aria-label="Menu pengguna">
+        <span class="grid h-8 w-8 place-items-center text-xs font-semibold" :class="roleInfo.cls" x-text="initials(session.nama)"></span>
+        <span class="hidden text-left text-xs leading-tight sm:block"><span class="block font-medium" x-text="session.nama"></span><span class="block text-ink/40" x-text="roleInfo.nama"></span></span>
+        <i class="fa-solid fa-chevron-down hidden text-[10px] text-ink/40 sm:block"></i>
+      </button>
+      <div x-show="userMenu" x-transition class="card absolute right-0 top-full mt-2 w-72 py-1 shadow-xl">
+        <p class="border-b border-black/5 px-4 py-2 text-xs text-ink/50" x-text="session.email"></p>
+        <p class="px-4 pb-1 pt-3 text-[10px] font-semibold uppercase tracking-widest text-ink/40">Simulasi: ganti peran</p>
+        <template x-for="u in db.users.filter(u => u.aktif)" :key="u.id">
+          <button @click="switchUser(u)" class="flex w-full items-center gap-3 px-4 py-2 text-left text-sm hover:bg-surface" :class="u.email === session.email && 'bg-surface'">
+            <span class="grid h-7 w-7 shrink-0 place-items-center rounded text-[11px]" :class="roles[u.role].cls"><i class="fa-solid" :class="roles[u.role].icon"></i></span>
+            <span class="min-w-0 flex-1 leading-tight"><span class="block truncate" x-text="u.nama"></span><span class="block truncate text-[11px] text-ink/40" x-text="roles[u.role].nama"></span></span>
+            <i x-show="u.email === session.email" class="fa-solid fa-check text-xs text-navy"></i>
+          </button>
+        </template>
+        <div class="mt-1 border-t border-black/5">
+          <button @click="logout()" class="flex w-full items-center gap-2 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50"><i class="fa-solid fa-right-from-bracket w-4"></i> Keluar</button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="p-4 sm:p-6 lg:p-8">
+
+    <!-- ============================================================ DASHBOARD -->
+    <section x-show="route === 'dashboard'" class="space-y-6">
+      <div class="flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <h1 class="display text-4xl">Halo, <span class="text-navy" x-text="session.nama.split(' ')[0]"></span></h1>
+          <p class="mt-2 text-sm text-ink/60">Masuk sebagai <span class="font-medium text-ink" x-text="roleInfo.nama"></span> — <span x-text="roleInfo.desc"></span></p>
+        </div>
+        <div class="flex flex-wrap gap-2">
+          <a x-show="can('device.manage')" href="#scanner" class="btn-light"><i class="fa-solid fa-barcode"></i> Kartu &amp; Scanner</a>
+          <a x-show="can('payroll.process')" href="#payroll" class="btn-primary"><i class="fa-solid fa-calculator"></i> Proses Payroll</a>
+          <a x-show="session.role === 'pimpinan'" href="#laporan" class="btn-primary"><i class="fa-solid fa-chart-column"></i> Laporan Analisa</a>
+        </div>
+      </div>
+
+      <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <a href="#karyawan" class="card p-5 hover:ring-navy/30">
+          <div class="flex items-center justify-between text-sm text-ink/60">Karyawan Aktif <i class="fa-solid fa-users text-navy"></i></div>
+          <p class="stat" x-text="todayStats.total"></p>
+          <p class="mt-1 text-xs text-ink/50"><span class="font-medium text-ink" x-text="todayStats.lapangan"></span> lapangan · <span class="font-medium text-ink" x-text="todayStats.kantor"></span> kantor</p>
+        </a>
+        <a href="#absensi" @click="absView = 'harian'; absDate = today" class="card p-5 hover:ring-navy/30">
+          <div class="flex items-center justify-between text-sm text-ink/60">Hadir Hari Ini <i class="fa-solid fa-id-card text-navy"></i></div>
+          <p class="stat"><span x-text="todayStats.hadir"></span><span class="text-lg text-ink/40"> / <span x-text="todayStats.jadwal"></span> terjadwal</span></p>
+          <p class="mt-1 text-xs text-ink/50"><span class="font-medium text-amber-700" x-text="todayStats.terlambat"></span> terlambat · <span class="font-medium text-ink" x-text="todayStats.belum"></span> belum absen · <span x-text="todayStats.izin"></span> izin/cuti</p>
+        </a>
+        <a :href="can('ot.approve') ? '#lembur' : '#absensi'" class="card p-5 hover:ring-navy/30">
+          <div class="flex items-center justify-between text-sm text-ink/60">Lembur Periode Ini <i class="fa-solid fa-business-time text-navy"></i></div>
+          <p class="stat"><span x-text="num(otSummary.total)"></span><span class="text-lg text-ink/40"> jam</span></p>
+          <p class="mt-1 text-xs text-ink/50"><span class="font-medium text-amber-700" x-text="num(otSummary.menunggu)"></span> jam menunggu persetujuan</p>
+        </a>
+        <a :href="allowed('payroll') ? '#payroll' : '#dashboard'" class="card p-5 hover:ring-navy/30">
+          <div class="flex items-center justify-between text-sm text-ink/60">Payroll Terakhir <i class="fa-solid fa-money-check-dollar text-navy"></i></div>
+          <template x-if="runsSorted[0]">
+            <div>
+              <p class="stat" x-text="can('emp.gaji.view') ? jt(runsSorted[0].totals.biaya) : runsSorted[0].totals.karyawan + ' slip'"></p>
+              <p class="mt-1 flex items-center gap-2 text-xs text-ink/50"><span x-text="pLabel(runsSorted[0].period)"></span><span class="badge" :class="runSt(runsSorted[0].status).cls"><i class="fa-solid" :class="runSt(runsSorted[0].status).icon"></i><span x-text="runsSorted[0].status"></span></span></p>
+            </div>
+          </template>
+        </a>
+      </div>
+
+      <div class="grid grid-cols-1 gap-4 xl:grid-cols-12">
+        <div class="card p-6 xl:col-span-8">
+          <div class="flex flex-wrap items-start justify-between gap-2">
+            <div><h2 class="font-semibold">Kehadiran 14 hari terakhir</h2><p class="text-xs text-ink/50">Diolah otomatis dari log scan kartu barcode</p></div>
+            <ul class="flex flex-wrap gap-x-4 gap-y-1 text-xs text-ink/60">
+              <li class="inline-flex items-center gap-1.5"><span class="h-2.5 w-2.5 bg-navy"></span> Hadir</li>
+              <li class="inline-flex items-center gap-1.5"><span class="h-2.5 w-2.5 bg-sky"></span> Izin/sakit/cuti</li>
+              <li class="inline-flex items-center gap-1.5"><span class="h-2.5 w-2.5 bg-red-500"></span> Alpa</li>
+            </ul>
+          </div>
+          <div class="relative mt-6 h-52">
+            <template x-for="g in [1, 0.5, 0]"><div class="absolute left-7 right-0 border-t border-ink/10" :class="g ? 'border-dashed' : ''" :style="`bottom:${g * 100}%`"><span class="absolute -left-7 w-5 -translate-y-1/2 text-right text-[10px] tabular-nums text-ink/40" x-text="Math.round(chart14.max * g)"></span></div></template>
+            <div class="absolute inset-y-0 left-7 right-0 flex items-end gap-1">
+              <template x-for="c in chart14.rows" :key="c.ds">
+                <div class="group relative flex h-full flex-1 items-end justify-center" :title="fmtDay(c.ds) + ': hadir ' + c.hadir + ', izin/sakit/cuti ' + c.absen + ', alpa ' + c.alpa + ' (terjadwal ' + c.jadwal + ')'">
+                  <div class="flex w-full max-w-[28px] flex-col-reverse overflow-hidden rounded-t-[3px]" :style="`height:${((c.hadir + c.absen + c.alpa) / chart14.max) * 100}%`">
+                    <div class="w-full bg-navy group-hover:bg-sky" :style="`flex:${c.hadir} 1 0`"></div>
+                    <div class="w-full bg-sky/70" :style="`flex:${c.absen} 1 0`"></div>
+                    <div class="w-full bg-red-500" :style="`flex:${c.alpa} 1 0`"></div>
+                  </div>
+                </div>
+              </template>
+            </div>
+          </div>
+          <div class="ml-7 mt-2 flex gap-1"><template x-for="c in chart14.rows" :key="c.ds"><span class="flex-1 text-center text-[10px] tabular-nums" :class="c.ds === today ? 'font-semibold text-ink' : 'text-ink/40'" x-text="parseInt(c.ds.slice(8))"></span></template></div>
+        </div>
+
+        <div class="card p-6 xl:col-span-4">
+          <h2 class="font-semibold">Tugas &amp; notifikasi</h2>
+          <p class="text-xs text-ink/50">Sesuai peran <span x-text="roleInfo.nama"></span></p>
+          <ul class="mt-4 space-y-2">
+            <template x-for="t in tasks">
+              <li><a :href="t.href" @click="t.go && t.go()" class="flex items-center gap-3 rounded-md bg-surface px-3 py-2.5 text-sm hover:bg-navy hover:text-white"><i class="fa-solid w-4 text-center text-accent" :class="t.icon"></i><span class="flex-1" x-text="t.text"></span><i class="fa-solid fa-chevron-right text-[10px] opacity-40"></i></a></li>
+            </template>
+            <li x-show="!tasks.length" class="rounded-md bg-emerald-50 px-3 py-3 text-sm text-emerald-800"><i class="fa-solid fa-circle-check"></i> Tidak ada tugas tertunda.</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 gap-4 xl:grid-cols-12">
+        <div class="card xl:col-span-7">
+          <div class="flex items-center justify-between border-b border-black/5 px-6 py-4">
+            <div><h2 class="font-semibold">Scan kartu terbaru <span class="ml-1 inline-flex items-center gap-1 text-[11px] font-normal text-emerald-600"><span class="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500"></span> live</span></h2><p class="text-xs text-ink/50">Data dikirim scanner ke server secara otomatis (push)</p></div>
+            <a href="mesin.html" target="_blank" class="btn-light btn-sm"><i class="fa-solid fa-barcode"></i> Coba absen</a>
+          </div>
+          <ul class="divide-y divide-black/5">
+            <template x-for="s in liveScans" :key="s.id">
+              <li class="flex items-center gap-3 px-6 py-2.5 text-sm" :class="flash[s.id] && 'flash'">
+                <span class="grid h-8 w-8 shrink-0 place-items-center bg-navy text-[10px] font-semibold text-white" x-text="initials(empById(s.empId).nama)"></span>
+                <span class="min-w-0 flex-1"><span class="block truncate font-medium" x-text="empById(s.empId).nama"></span><span class="block truncate text-xs text-ink/50" x-text="(s.kode || 'ID ' + s.pin) + ' · ' + devById(s.dev).nama"></span></span>
+                <span class="text-right text-xs"><span class="block font-mono font-medium tabular-nums" x-text="s.t.slice(11, 19)"></span><span class="block text-ink/40" x-text="fmtDate(s.t)"></span></span>
+                <span class="badge hidden bg-surface text-ink/60 ring-black/5 sm:inline-flex" x-text="s.src"></span>
+              </li>
+            </template>
+          </ul>
+        </div>
+        <div class="card p-6 xl:col-span-5">
+          <div class="flex items-start justify-between"><div><h2 class="font-semibold">Biaya payroll per periode</h2><p class="text-xs text-ink/50">Total biaya perusahaan vs take home pay</p></div></div>
+          <template x-if="can('emp.gaji.view')">
+            <div class="mt-5 space-y-4">
+              <template x-for="c in costTrend" :key="c.r.id">
+                <div>
+                  <div class="flex justify-between text-xs"><span class="font-medium" x-text="pLabel(c.r.period)"></span><span class="tabular-nums text-ink/60" x-text="fmt(c.r.totals.biaya)"></span></div>
+                  <div class="relative mt-1.5 h-3 bg-surface"><div class="absolute inset-y-0 left-0 bg-navy/25" :style="`width:${c.pct}%`"></div><div class="absolute inset-y-0 left-0 bg-navy" :style="`width:${c.thpPct}%`"></div></div>
+                  <p class="mt-1 text-[11px] text-ink/50">THP <span x-text="fmt(c.r.totals.thp)"></span> · lembur <span x-text="fmt(c.r.totals.lembur)"></span></p>
+                </div>
+              </template>
+              <div class="border-t border-black/5 pt-4">
+                <p class="text-xs text-ink/50">Estimasi periode berjalan (<span x-text="pLabel(curPeriod)"></span>, data s/d hari ini)</p>
+                <p class="mt-1 text-2xl font-light tabular-nums" x-text="fmt(previewRun.totals.biaya)"></p>
+              </div>
+            </div>
+          </template>
+          <p x-show="!can('emp.gaji.view')" class="mt-4 rounded-md bg-surface p-4 text-sm text-ink/60"><i class="fa-solid fa-lock"></i> Data nominal gaji hanya untuk Keuangan, Pimpinan & Admin.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================ PORTAL KARYAWAN -->
+    <section x-show="route === 'saya'" class="space-y-6">
+      <template x-if="me">
+        <div class="space-y-6">
+          <div class="card flex flex-wrap items-center gap-5 p-6">
+            <span class="grid h-16 w-16 place-items-center bg-navy text-xl font-semibold text-white" x-text="initials(me.nama)"></span>
+            <div class="min-w-0 flex-1">
+              <h1 class="display text-3xl" x-text="me.nama"></h1>
+              <p class="mt-1 text-sm text-ink/60"><span x-text="me.nik"></span> · <span x-text="me.jabatan"></span> · <span x-text="unitById(me.unitId).nama"></span></p>
+              <p class="mt-2 flex flex-wrap gap-2 text-xs">
+                <span class="badge bg-surface text-ink/70 ring-black/5"><i class="fa-solid fa-location-dot"></i><span x-text="lokById(me.lokasiId).nama"></span></span>
+                <span class="badge bg-surface text-ink/70 ring-black/5"><i class="fa-solid fa-calendar-days"></i><span x-text="jadwalById(me.jadwalId).nama"></span></span>
+                <span class="badge bg-surface text-ink/70 ring-black/5"><i class="fa-solid fa-id-card"></i>Kartu <span class="font-mono" x-text="me.kartu.no || '—'"></span> · <span x-text="me.kartu.status"></span></span>
+              </p>
+            </div>
+            <div class="flex flex-wrap gap-2">
+              <a href="mesin.html" target="_blank" class="btn-light"><i class="fa-solid fa-barcode"></i> Absen (simulator)</a>
+              <button @click="openLeave(me.id)" class="btn-primary"><i class="fa-solid fa-paper-plane"></i> Ajukan Izin / Cuti</button>
+            </div>
+          </div>
+
+          <div class="flex gap-6 overflow-x-auto border-b border-black/10">
+            <template x-for="t in [['kehadiran','Kehadiran Saya'],['slip','Slip Gaji'],['pengajuan','Pengajuan'],['profil','Profil']]"><button @click="sayaTab = t[0]" class="tab" :class="sayaTab === t[0] && 'is-active'" x-text="t[1]"></button></template>
+          </div>
+
+          <div x-show="sayaTab === 'kehadiran'" class="space-y-4">
+            <div class="flex flex-wrap items-center gap-3">
+              <select x-model="sayaPeriod" class="input w-auto"><template x-for="p in periodOptions.filter(p => p <= curPeriod)"><option :value="p" x-text="'Periode ' + pLabel(p)"></option></template></select>
+              <span class="text-xs text-ink/50" x-text="pRange(sayaPeriod)"></span>
+            </div>
+            <div class="grid gap-3 sm:grid-cols-3 lg:grid-cols-6">
+              <template x-for="k in [['Hari jadwal', mySummary.jadwal], ['Hadir', mySummary.hadir], ['Terlambat', mySummary.terlambat], ['Alpa', mySummary.alpa], ['Izin/Sakit/Cuti', mySummary.izin + mySummary.sakit + mySummary.cuti], ['Lembur (jam)', num(mySummary.lembur.reduce((a, r) => a + r.ot, 0))]]">
+                <div class="card p-4"><p class="text-xs text-ink/50" x-text="k[0]"></p><p class="mt-1 text-2xl font-light tabular-nums" x-text="k[1]"></p></div>
+              </template>
+            </div>
+            <div class="card overflow-x-auto">
+              <table class="w-full text-sm">
+                <thead class="border-b border-black/5"><tr><th class="th">Tanggal</th><th class="th">Jenis hari</th><th class="th">Masuk</th><th class="th">Pulang</th><th class="th">Terlambat</th><th class="th">Jam kerja</th><th class="th">Lembur</th><th class="th">Status</th></tr></thead>
+                <tbody class="divide-y divide-black/5">
+                  <template x-for="d in [...mySummary.days].reverse()" :key="d.ds">
+                    <tr :class="!d.sched && 'bg-surface/60'">
+                      <td class="td whitespace-nowrap" x-text="fmtDay(d.ds)"></td>
+                      <td class="td text-xs text-ink/60" x-text="d.hol || d.jenisHari"></td>
+                      <td class="td font-mono tabular-nums" x-text="d.masuk || '—'"></td>
+                      <td class="td font-mono tabular-nums" x-text="d.pulang || '—'"></td>
+                      <td class="td tabular-nums" :class="d.late > db.rules.toleransiTerlambat && 'text-amber-700'" x-text="d.late ? d.late + ' mnt' : '—'"></td>
+                      <td class="td tabular-nums" x-text="d.kerja ? num(d.kerja / 60) + ' j' : '—'"></td>
+                      <td class="td text-xs"><span x-show="d.ot"><span class="tabular-nums" x-text="num(d.ot) + ' j'"></span> <span class="badge ml-1" :class="stCls(d.otStatus)" x-text="d.otStatus"></span></span><span x-show="!d.ot" class="text-ink/30">—</span></td>
+                      <td class="td"><span class="badge" :class="stCls(d.status)" x-text="d.status"></span></td>
+                    </tr>
+                  </template>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div x-show="sayaTab === 'slip'" class="space-y-3">
+            <p class="text-sm text-ink/60">Slip gaji tersedia setelah payroll disetujui Pimpinan.</p>
+            <template x-for="x in mySlips" :key="x.run.id">
+              <div class="card flex flex-wrap items-center gap-4 p-5">
+                <span class="grid h-11 w-11 place-items-center bg-surface text-navy"><i class="fa-solid fa-file-invoice-dollar"></i></span>
+                <div class="min-w-0 flex-1"><p class="font-semibold" x-text="'Slip Gaji ' + pLabel(x.run.period)"></p><p class="text-xs text-ink/50" x-text="pRange(x.run.period)"></p></div>
+                <div class="text-right"><p class="text-xs text-ink/50">Take home pay</p><p class="text-lg font-semibold tabular-nums" x-text="fmt(x.line.thp)"></p></div>
+                <span class="badge" :class="runSt(x.run.status).cls" x-text="x.run.status"></span>
+                <a :href="printUrl('slip', x.run, me.id)" target="_blank" class="btn-dark btn-sm"><i class="fa-solid fa-print"></i> Lihat / Cetak</a>
+              </div>
+            </template>
+            <p x-show="!mySlips.length" class="card p-6 text-sm text-ink/50">Belum ada slip gaji yang disetujui.</p>
+          </div>
+
+          <div x-show="sayaTab === 'pengajuan'" class="card overflow-x-auto">
+            <table class="w-full text-sm">
+              <thead class="border-b border-black/5"><tr><th class="th">Jenis</th><th class="th">Tanggal</th><th class="th">Keterangan</th><th class="th">Status</th></tr></thead>
+              <tbody class="divide-y divide-black/5">
+                <template x-for="l in myLeaves" :key="l.id"><tr><td class="td font-medium" x-text="l.jenis"></td><td class="td whitespace-nowrap" x-text="fmtDate(l.dari) + (l.sampai !== l.dari ? ' – ' + fmtDate(l.sampai) : '')"></td><td class="td text-ink/60" x-text="l.ket"></td><td class="td"><span class="badge" :class="stCls(l.status)" x-text="l.status"></span></td></tr></template>
+                <tr x-show="!myLeaves.length"><td colspan="4" class="td py-8 text-center text-ink/50">Belum ada pengajuan.</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div x-show="sayaTab === 'profil'" class="card grid gap-x-8 gap-y-4 p-6 text-sm sm:grid-cols-2 lg:grid-cols-3">
+            <template x-for="f in [['NIK Karyawan', me.nik], ['No. KTP', me.ktp], ['NPWP', me.npwp || '—'], ['Status PTKP', me.ptkp], ['Kategori', me.kategori], ['Status kerja', me.statusKerja], ['Tanggal masuk', fmtDate(me.tglMasuk)], ['Telepon', me.telp], ['Email', me.email], ['Bank', me.bank + ' · ' + me.rekening], ['Atas nama', me.atasNama], ['Skema kerja', jadwalById(me.jadwalId).keterangan]]">
+              <div><p class="text-xs text-ink/50" x-text="f[0]"></p><p class="mt-0.5 font-medium" x-text="f[1]"></p></div>
+            </template>
+          </div>
+        </div>
+      </template>
+      <p x-show="!me" class="card p-6 text-sm">Akun ini belum ditautkan ke data karyawan.</p>
+    </section>
+
+    <!-- ============================================================ KARYAWAN -->
+    <section x-show="route === 'karyawan'" class="space-y-5">
+      <div class="flex flex-wrap items-end justify-between gap-4">
+        <div><h1 class="display text-4xl">Database Karyawan</h1><p class="mt-2 text-sm text-ink/60">Data induk karyawan lapangan &amp; kantor, skema kerja, komponen gaji dan kartu ID berbarcode untuk absensi.</p></div>
+        <button x-show="can('emp.edit')" @click="openEmp()" class="btn-primary"><i class="fa-solid fa-user-plus text-xs"></i> Tambah Karyawan</button>
+      </div>
+      <div class="grid gap-3 sm:grid-cols-4">
+        <template x-for="k in [['Total aktif', activeEmps.length, 'fa-users'], ['Lapangan', activeEmps.filter(e => e.kategori === 'Lapangan').length, 'fa-helmet-safety'], ['Kantor', activeEmps.filter(e => e.kategori === 'Kantor').length, 'fa-building'], ['Harian lepas', activeEmps.filter(e => e.tipeGaji === 'Harian').length, 'fa-calendar-day']]">
+          <div class="card flex items-center gap-4 p-4"><i class="fa-solid text-navy" :class="k[2]"></i><div><p class="text-xs text-ink/50" x-text="k[0]"></p><p class="text-xl font-light tabular-nums" x-text="k[1]"></p></div></div>
+        </template>
+      </div>
+      <div class="card flex flex-wrap items-center gap-3 p-4">
+        <div class="relative min-w-[200px] flex-1"><i class="fa-solid fa-magnifying-glass pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-xs text-ink/40"></i><input x-model="empQ" type="search" placeholder="Cari nama, NIK, jabatan, no. kartu…" class="input pl-9"></div>
+        <select x-model="empKat" class="input w-auto"><option value="">Semua kategori</option><option>Lapangan</option><option>Kantor</option></select>
+        <select x-model="empUnit" class="input w-auto"><option value="">Semua unit</option><template x-for="u in db.units"><option :value="u.id" x-text="u.nama"></option></template></select>
+        <select x-model="empStatus" class="input w-auto"><option value="">Semua status</option><option>Aktif</option><option>Nonaktif</option></select>
+      </div>
+      <div class="card overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead class="border-b border-black/5"><tr><th class="th">Karyawan</th><th class="th">Kategori / Unit</th><th class="th">Skema kerja</th><th class="th">Lokasi</th><th class="th">Status</th><th class="th" x-show="can('emp.gaji.view')">Gaji pokok</th><th class="th">Kartu ID</th><th class="th"></th></tr></thead>
+          <tbody class="divide-y divide-black/5">
+            <template x-for="e in filteredEmps" :key="e.id">
+              <tr class="hover:bg-surface/60">
+                <td class="td"><button @click="openDetail(e)" class="flex items-center gap-3 text-left"><span class="grid h-9 w-9 shrink-0 place-items-center bg-navy text-xs font-semibold text-white" x-text="initials(e.nama)"></span><span><span class="block font-medium hover:text-navy" x-text="e.nama"></span><span class="block text-xs text-ink/50" x-text="e.nik + ' · ' + e.jabatan"></span></span></button></td>
+                <td class="td"><span class="badge" :class="e.kategori === 'Lapangan' ? 'bg-accent/10 text-orange-800 ring-accent/30' : 'bg-sky/10 text-navy ring-sky/30'" x-text="e.kategori"></span><span class="mt-1 block text-xs text-ink/50" x-text="unitById(e.unitId).nama"></span></td>
+                <td class="td"><span class="font-mono text-xs" x-text="jadwalById(e.jadwalId).kode"></span><span x-show="jadwalById(e.jadwalId).pola === 'siklus'" class="block text-[11px] text-ink/50" x-text="'Grup roster ' + String.fromCharCode(65 + Number(e.rosterOffset))"></span></td>
+                <td class="td text-xs text-ink/60" x-text="lokById(e.lokasiId).nama"></td>
+                <td class="td"><span class="badge" :class="e.status === 'Aktif' ? 'bg-emerald-50 text-emerald-700 ring-emerald-600/20' : 'bg-slate-100 text-slate-600 ring-slate-500/20'" x-text="e.status"></span><span class="block pt-1 text-[11px] text-ink/50" x-text="e.statusKerja"></span></td>
+                <td class="td whitespace-nowrap tabular-nums" x-show="can('emp.gaji.view')"><span x-text="e.tipeGaji === 'Harian' ? fmt(e.gaji.upahHarian) + '/hari' : fmt(e.gaji.pokok)"></span></td>
+                <td class="td whitespace-nowrap text-xs"><span class="font-mono" x-text="e.kartu.no || '—'"></span><span class="block" :class="e.kartu.status === 'Aktif' ? 'text-emerald-700' : 'text-red-600'"><i class="fa-solid fa-id-card"></i> <span x-text="e.kartu.status"></span></span></td>
+                <td class="td whitespace-nowrap text-right">
+                  <button @click="openDetail(e)" class="btn-icon" title="Detail"><i class="fa-solid fa-eye"></i></button>
+                  <button x-show="can('emp.edit') || can('emp.gaji')" @click="openEmp(e)" class="btn-icon" title="Ubah"><i class="fa-solid fa-pen"></i></button>
+                </td>
+              </tr>
+            </template>
+            <tr x-show="!filteredEmps.length"><td colspan="8" class="td py-10 text-center text-ink/50">Tidak ada data.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ============================================================ JADWAL -->
+    <section x-show="route === 'jadwal'" class="space-y-6">
+      <div class="flex flex-wrap items-end justify-between gap-4">
+        <div><h1 class="display text-4xl">Jadwal &amp; Kalender</h1><p class="mt-2 text-sm text-ink/60">Skema jam kerja (basic 8 jam, perusahaan 6-1, roster Freeport 6-1) dan hari libur nasional.</p></div>
+        <button x-show="can('jadwal.edit')" @click="openJadwal()" class="btn-primary"><i class="fa-solid fa-plus text-xs"></i> Skema Kerja</button>
+      </div>
+      <div class="grid gap-4 lg:grid-cols-3">
+        <template x-for="j in db.jadwal" :key="j.id">
+          <div class="card flex flex-col p-5">
+            <div class="flex items-start justify-between gap-2">
+              <div><span class="font-mono text-xs text-navy" x-text="j.kode"></span><h3 class="mt-1 font-semibold" x-text="j.nama"></h3></div>
+              <button x-show="can('jadwal.edit')" @click="openJadwal(j)" class="btn-icon"><i class="fa-solid fa-pen"></i></button>
+            </div>
+            <p class="mt-2 text-sm text-ink/60" x-text="j.keterangan"></p>
+            <dl class="mt-4 grid grid-cols-2 gap-3 text-sm">
+              <div><dt class="text-xs text-ink/50">Jam kerja</dt><dd class="font-medium tabular-nums" x-text="j.masuk + ' – ' + j.pulang"></dd></div>
+              <div><dt class="text-xs text-ink/50">Reguler</dt><dd class="font-medium" x-text="num(j.jamReguler) + ' jam/hari'"></dd></div>
+              <div><dt class="text-xs text-ink/50">Pola</dt><dd class="font-medium" x-text="j.pola === 'siklus' ? 'Siklus ' + j.siklusKerja + ' kerja / ' + j.siklusLibur + ' libur' : j.hari.map(h => ['Min','Sen','Sel','Rab','Kam','Jum','Sab'][h]).join(', ')"></dd></div>
+              <div><dt class="text-xs text-ink/50">Pengali lembur libur</dt><dd class="font-medium" x-text="j.mingguKerja + ' hari kerja/minggu'"></dd></div>
+              <div><dt class="text-xs text-ink/50">Pembagi upah harian</dt><dd class="font-medium" x-text="j.hariKerjaBulan + ' hari'"></dd></div>
+              <div><dt class="text-xs text-ink/50">Karyawan</dt><dd class="font-medium" x-text="activeEmps.filter(e => e.jadwalId === j.id).length + ' orang'"></dd></div>
+            </dl>
+            <div class="mt-4 border-t border-black/5 pt-4">
+              <p class="mb-2 text-xs font-medium text-ink/50">Pratinjau 14 hari ke depan</p>
+              <div class="space-y-1">
+                <template x-for="row in rosterPreview(j).rows" :key="row.g">
+                  <div class="flex items-center gap-1">
+                    <span class="w-14 shrink-0 text-[10px] text-ink/50" x-text="j.pola === 'siklus' ? 'Grup ' + String.fromCharCode(65 + row.g) + ' (' + row.emps + ')' : 'Semua'"></span>
+                    <template x-for="c in row.cells" :key="c.ds"><span class="h-4 flex-1" :class="c.hol ? 'bg-red-200' : c.work ? 'bg-navy' : 'bg-surface ring-1 ring-inset ring-black/10'" :title="fmtDay(c.ds) + (c.hol ? ' — ' + c.hol : c.work ? ' — kerja' : ' — libur')"></span></template>
+                  </div>
+                </template>
+              </div>
+            </div>
+          </div>
+        </template>
+      </div>
+      <div class="grid gap-4 lg:grid-cols-2">
+        <div class="card p-6">
+          <h2 class="font-semibold">Hari libur nasional</h2>
+          <p class="text-xs text-ink/50">Masuk kerja pada tanggal ini dihitung lembur hari libur. Sesuaikan dengan SKB libur nasional &amp; cuti bersama.</p>
+          <form x-show="can('jadwal.edit')" @submit.prevent="addLibur()" class="mt-4 flex flex-wrap gap-2"><input type="date" x-model="liburForm.tanggal" class="input w-auto"><input x-model="liburForm.nama" placeholder="Nama hari libur" class="input min-w-[160px] flex-1"><button class="btn-dark"><i class="fa-solid fa-plus"></i></button></form>
+          <ul class="mt-4 max-h-80 divide-y divide-black/5 overflow-y-auto">
+            <template x-for="l in db.libur" :key="l.tanggal"><li class="flex items-center gap-3 py-2 text-sm" :class="l.tanggal < today && 'opacity-50'"><span class="w-28 shrink-0 tabular-nums text-ink/60" x-text="fmtDate(l.tanggal)"></span><span class="flex-1" x-text="l.nama"></span><button x-show="can('jadwal.edit')" @click="removeLibur(l)" class="btn-icon"><i class="fa-solid fa-trash-can text-xs"></i></button></li></template>
+          </ul>
+        </div>
+        <div class="card p-6">
+          <h2 class="font-semibold">Lokasi kerja &amp; tunjangan area</h2>
+          <p class="text-xs text-ink/50">Tunjangan lokasi termasuk komponen tetap (dasar lembur &amp; BPJS).</p>
+          <ul class="mt-4 divide-y divide-black/5">
+            <template x-for="l in db.lokasi" :key="l.id"><li class="flex items-center gap-3 py-3 text-sm"><span class="w-12 font-mono text-xs text-navy" x-text="l.kode"></span><span class="flex-1"><span class="block font-medium" x-text="l.nama"></span><span class="text-xs text-ink/50" x-text="l.keterangan + ' · ' + activeEmps.filter(e => e.lokasiId === l.id).length + ' karyawan'"></span></span><span class="tabular-nums" x-text="can('emp.gaji.view') ? fmt(l.tunjangan) : '•••'"></span></li></template>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================ KARTU & SCANNER BARCODE -->
+    <section x-show="route === 'scanner'" class="space-y-6">
+      <div class="flex flex-wrap items-end justify-between gap-4">
+        <div><h1 class="display text-4xl">Kartu &amp; Scanner Barcode</h1><p class="mt-2 max-w-3xl text-sm text-ink/60">Setiap karyawan memiliki <strong>kartu ID berbarcode</strong>. Kartu dipindai di scanner pos masuk, lalu log dikirim ke server secara otomatis (<em>push</em>). Untuk lokasi tanpa jaringan, log scanner genggam diimpor dari file.</p></div>
+        <div class="flex flex-wrap gap-2">
+          <button x-show="can('absen.edit')" @click="importModal = true" class="btn-light"><i class="fa-solid fa-file-import"></i> Import Log Scanner</button>
+          <a :href="cardUrl()" target="_blank" class="btn-light"><i class="fa-solid fa-print"></i> Cetak Semua Kartu</a>
+          <a href="mesin.html" target="_blank" class="btn-primary"><i class="fa-solid fa-up-right-from-square"></i> Simulator di Tab Baru</a>
+        </div>
+      </div>
+
+      <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <template x-for="d in db.devices" :key="d.id">
+          <div class="card p-5">
+            <div class="flex items-start justify-between gap-2">
+              <span class="grid h-10 w-10 place-items-center bg-ink text-white"><i class="fa-solid fa-barcode"></i></span>
+              <button @click="can('device.manage') && toggleDevice(d)" class="badge" :class="d.online ? 'bg-emerald-50 text-emerald-700 ring-emerald-600/20' : 'bg-red-50 text-red-700 ring-red-600/20'" :title="can('device.manage') ? 'Klik untuk ubah status (simulasi)' : ''"><span class="h-1.5 w-1.5 rounded-full" :class="d.online ? 'animate-pulse bg-emerald-500' : 'bg-red-500'"></span><span x-text="d.online ? 'Online' : 'Offline'"></span></button>
+            </div>
+            <p class="mt-3 font-mono text-xs text-navy" x-text="d.id"></p>
+            <p class="font-semibold leading-snug" x-text="d.nama"></p>
+            <dl class="mt-3 space-y-1 text-xs text-ink/60">
+              <div class="flex justify-between"><dt>SN</dt><dd class="font-mono" x-text="d.sn"></dd></div>
+              <div class="flex justify-between"><dt>IP</dt><dd class="font-mono" x-text="d.ip"></dd></div>
+              <div class="flex justify-between"><dt>Scan hari ini</dt><dd class="font-medium text-ink" x-text="devToday(d.id)"></dd></div>
+              <div class="flex justify-between"><dt>Sinkron terakhir</dt><dd x-text="fmtTime(d.lastSync)"></dd></div>
+            </dl>
+          </div>
+        </template>
+      </div>
+
+      <div class="grid gap-4 xl:grid-cols-12">
+        <div class="card overflow-hidden xl:col-span-5">
+          <div class="border-b border-black/5 px-5 py-4"><h2 class="font-semibold">Simulator scanner (tertanam)</h2><p class="text-xs text-ink/50">Klik kartu karyawan untuk memindai — log langsung masuk ke tabel di samping.</p></div>
+          <template x-if="route === 'scanner'"><iframe src="mesin.html?embed=1" title="Simulator scanner kartu barcode" class="h-[680px] w-full border-0 bg-ink"></iframe></template>
+        </div>
+        <div class="space-y-4 xl:col-span-7">
+          <div class="card">
+            <div class="flex items-center justify-between border-b border-black/5 px-5 py-4"><div><h2 class="font-semibold">Log scan masuk <span class="ml-1 inline-flex items-center gap-1 text-[11px] font-normal text-emerald-600"><span class="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500"></span> live</span></h2><p class="text-xs text-ink/50">10 log terbaru dari semua scanner</p></div><a href="#absensi" @click="absView = 'harian'; absDate = today" class="text-xs font-medium text-navy hover:underline">Rekap hari ini</a></div>
+            <div class="overflow-x-auto"><table class="w-full text-sm">
+              <thead class="border-b border-black/5"><tr><th class="th">Waktu</th><th class="th">No. kartu</th><th class="th">Karyawan</th><th class="th">Scanner</th><th class="th">Sumber</th></tr></thead>
+              <tbody class="divide-y divide-black/5">
+                <template x-for="s in liveScans" :key="s.id"><tr :class="flash[s.id] && 'flash'"><td class="td whitespace-nowrap font-mono text-xs tabular-nums" x-text="s.t"></td><td class="td font-mono text-xs" x-text="s.kode || '—'"></td><td class="td" x-text="empById(s.empId).nama"></td><td class="td font-mono text-xs" x-text="s.dev"></td><td class="td"><span class="badge bg-surface text-ink/60 ring-black/5" x-text="s.src"></span></td></tr></template>
+              </tbody>
+            </table></div>
+          </div>
+          <div class="card p-5">
+            <h2 class="font-semibold">Contoh payload API (push dari scanner)</h2>
+            <p class="text-xs text-ink/50">Pada sistem online, scanner/terminal mengirim HTTP POST ke server, misalnya <code class="font-mono">POST https://hris.yawirayabinamandiri.com/api/absensi/scan</code>. Scanner USB biasa juga bisa dipakai di PC pos jaga — kartu terbaca seperti ketikan keyboard.</p>
+            <pre class="mt-3 max-h-56 overflow-auto bg-ink p-4 text-[11px] leading-relaxed text-emerald-300" x-text="db.pushLog[0] ? JSON.stringify({ diterima: db.pushLog[0].at, scanner: db.pushLog[0].dev, jumlah: db.pushLog[0].n, data: db.pushLog[0].payload }, null, 2) : 'Belum ada push dari simulator.\n\nContoh isi:\n{ &quot;scanner&quot;: &quot;SC03&quot;, &quot;kode&quot;: &quot;YBM100701&quot;, &quot;waktu&quot;: &quot;2026-11-05 05:52:10&quot; }'"></pre>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="flex flex-wrap items-center justify-between gap-3 border-b border-black/5 px-5 py-4">
+          <div><h2 class="font-semibold">Kartu ID karyawan</h2><p class="text-xs text-ink/50">No. kartu = YBM + ID absensi + versi. Kartu hilang diblokir; kartu pengganti otomatis membatalkan kartu lama.</p></div>
+          <input x-model="fpQ" type="search" placeholder="Cari nama / no. kartu…" class="input w-56">
+        </div>
+        <div class="overflow-x-auto"><table class="w-full text-sm">
+          <thead class="border-b border-black/5"><tr><th class="th">No. kartu</th><th class="th">Karyawan</th><th class="th">Lokasi / scanner</th><th class="th">Versi</th><th class="th">Diterbitkan</th><th class="th">Status</th><th class="th"></th></tr></thead>
+          <tbody class="divide-y divide-black/5">
+            <template x-for="e in cardRows" :key="e.id">
+              <tr>
+                <td class="td font-mono text-xs" x-text="e.kartu.no || '—'"></td>
+                <td class="td"><span class="font-medium" x-text="e.nama"></span><span class="block text-xs text-ink/50" x-text="e.nik + ' · ' + e.jabatan"></span></td>
+                <td class="td text-xs text-ink/60" x-text="lokById(e.lokasiId).nama"></td>
+                <td class="td text-xs" x-text="e.kartu.versi || '—'"></td>
+                <td class="td text-xs" x-text="fmtDate(e.kartu.terbit)"></td>
+                <td class="td"><span class="badge" :class="cardCls[e.kartu.status] || cardCls.Diblokir" x-text="e.kartu.status"></span></td>
+                <td class="td whitespace-nowrap text-right">
+                  <a x-show="e.kartu.status === 'Aktif'" :href="cardUrl(e)" target="_blank" class="btn-icon" title="Cetak kartu"><i class="fa-solid fa-print"></i></a>
+                  <template x-if="can('device.manage')"><span>
+                    <button x-show="e.kartu.status === 'Aktif'" @click="blockCard(e)" class="btn-light btn-sm text-red-600" title="Tandai hilang / blokir">Blokir</button>
+                    <button x-show="e.kartu.status !== 'Aktif' && e.kartu.versi" @click="activateCard(e)" class="btn-light btn-sm">Aktifkan</button>
+                    <button @click="issueCard(e)" class="btn-light btn-sm" x-text="e.kartu.versi ? 'Kartu pengganti' : 'Terbitkan kartu'"></button>
+                  </span></template>
+                </td>
+              </tr>
+            </template>
+          </tbody>
+        </table></div>
+      </div>
+    </section>
+
+    <!-- ============================================================ ABSENSI -->
+    <section x-show="route === 'absensi'" class="space-y-5">
+      <div class="flex flex-wrap items-end justify-between gap-4">
+        <div><h1 class="display text-4xl">Rekap Kehadiran</h1><p class="mt-2 text-sm text-ink/60">Diolah otomatis dari log scan kartu: scan pertama = masuk, scan terakhir = pulang. Toleransi terlambat <span x-text="db.rules.toleransiTerlambat"></span> menit.</p></div>
+        <div class="flex gap-2">
+          <div class="flex rounded-md bg-white p-1 ring-1 ring-black/10"><button @click="absView = 'matriks'" class="seg" :class="absView === 'matriks' ? 'bg-ink text-white' : 'text-ink/60'">Matriks periode</button><button @click="absView = 'harian'" class="seg" :class="absView === 'harian' ? 'bg-ink text-white' : 'text-ink/60'">Harian</button></div>
+          <button x-show="absView === 'matriks'" @click="exportAbsensi()" class="btn-light"><i class="fa-solid fa-file-csv"></i> Export</button>
+        </div>
+      </div>
+      <div class="card flex flex-wrap items-center gap-3 p-4">
+        <select x-show="absView === 'matriks'" x-model="period" class="input w-auto"><template x-for="p in periodOptions.filter(p => p <= curPeriod)"><option :value="p" x-text="'Periode ' + pLabel(p)"></option></template></select>
+        <span x-show="absView === 'matriks'" class="text-xs text-ink/50" x-text="pRange(period)"></span>
+        <input x-show="absView === 'harian'" type="date" x-model="absDate" :max="today" class="input w-auto">
+        <select x-model="absKat" class="input w-auto"><option value="">Lapangan &amp; kantor</option><option>Lapangan</option><option>Kantor</option></select>
+        <select x-model="absUnit" class="input w-auto"><option value="">Semua unit</option><template x-for="u in db.units"><option :value="u.id" x-text="u.nama"></option></template></select>
+        <input x-model="absQ" type="search" placeholder="Cari karyawan…" class="input w-48">
+      </div>
+      <p x-show="absView === 'matriks' && locked(period)" class="flex items-center gap-2 bg-amber-50 px-4 py-3 text-sm text-amber-900 ring-1 ring-inset ring-amber-600/20"><i class="fa-solid fa-lock"></i> Payroll periode ini berstatus <strong x-text="runOf(period)?.status"></strong>. Koreksi absensi tidak mengubah slip yang sudah dihitung.</p>
+
+      <div x-show="absView === 'matriks'" class="card overflow-x-auto">
+        <table class="text-xs">
+          <thead>
+            <tr class="border-b border-black/5">
+              <th class="th sticky left-0 z-10 min-w-[200px] bg-white">Karyawan</th>
+              <template x-for="d in periodDays" :key="d"><th class="cell p-0 text-center font-normal" :class="d === today ? 'bg-navy text-white' : ['0'].includes(String(parseISO(d).getDay())) ? 'text-red-500' : 'text-ink/50'"><span class="block text-[9px]" x-text="dow(d)"></span><span class="block font-semibold" x-text="parseInt(d.slice(8))"></span></th></template>
+              <th class="th text-center">H</th><th class="th text-center">T</th><th class="th text-center">A</th><th class="th text-center">I/S/C</th><th class="th text-center">Lembur</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-black/5">
+            <template x-for="x in absRows" :key="x.emp.id">
+              <tr>
+                <td class="sticky left-0 z-10 bg-white px-4 py-1.5"><span class="block truncate font-medium" x-text="x.emp.nama"></span><span class="block text-[10px] text-ink/50" x-text="x.emp.kategori + ' · ' + jadwalById(x.emp.jadwalId).kode"></span></td>
+                <template x-for="d in periodDays" :key="d">
+                  <td class="p-[1px]">
+                    <button @click="x.days[d] && d <= today && openDay(x.emp, d)" class="cell relative grid place-items-center font-semibold" :class="x.days[d] ? kode(x.days[d].kode)[1] : 'bg-white text-ink/10'" :title="x.days[d] ? fmtDay(d) + ' — ' + x.days[d].status + (x.days[d].masuk ? ' ' + x.days[d].masuk + '–' + (x.days[d].pulang || '?') : '') + (x.days[d].ot ? ' · lembur ' + x.days[d].ot + ' j (' + x.days[d].otStatus + ')' : '') : 'Belum bergabung'">
+                      <span x-text="x.days[d] ? x.days[d].kode : ''"></span>
+                      <span x-show="x.days[d] && x.days[d].ot" class="absolute right-0 top-0 h-1.5 w-1.5" :class="x.days[d]?.otStatus === 'Disetujui' ? 'bg-accent' : x.days[d]?.otStatus === 'Ditolak' ? 'bg-ink/30' : 'bg-amber-400 ring-1 ring-white'"></span>
+                    </button>
+                  </td>
+                </template>
+                <td class="px-2 text-center font-medium tabular-nums" x-text="x.sum.hadir"></td>
+                <td class="px-2 text-center tabular-nums text-amber-700" x-text="x.sum.terlambat || ''"></td>
+                <td class="px-2 text-center tabular-nums text-red-600" x-text="x.sum.alpa || ''"></td>
+                <td class="px-2 text-center tabular-nums" x-text="(x.sum.izin + x.sum.sakit + x.sum.cuti) || ''"></td>
+                <td class="whitespace-nowrap px-2 text-center tabular-nums" x-text="num(x.sum.lembur.reduce((a, r) => a + r.ot, 0)) + ' j'"></td>
+              </tr>
+            </template>
+          </tbody>
+        </table>
+        <div class="flex flex-wrap gap-x-4 gap-y-2 border-t border-black/5 p-4 text-[11px] text-ink/60">
+          <template x-for="k in ['H','T','TL','A','I','S','C','HL','L','LN']"><span class="inline-flex items-center gap-1.5"><span class="grid h-4 w-6 place-items-center text-[9px] font-semibold" :class="kode(k)[1]" x-text="k"></span><span x-text="kode(k)[0]"></span></span></template>
+          <span class="inline-flex items-center gap-1.5"><span class="h-2 w-2 bg-amber-400"></span> Lembur menunggu</span>
+          <span class="inline-flex items-center gap-1.5"><span class="h-2 w-2 bg-accent"></span> Lembur disetujui</span>
+        </div>
+      </div>
+
+      <div x-show="absView === 'harian'" class="card overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead class="border-b border-black/5"><tr><th class="th">Karyawan</th><th class="th">Jadwal</th><th class="th">Masuk</th><th class="th">Pulang</th><th class="th">Terlambat</th><th class="th">Jam kerja</th><th class="th">Lembur</th><th class="th">Status</th><th class="th"></th></tr></thead>
+          <tbody class="divide-y divide-black/5">
+            <template x-for="x in dailyRows" :key="x.emp.id">
+              <tr>
+                <td class="td"><span class="font-medium" x-text="x.emp.nama"></span><span class="block text-xs text-ink/50" x-text="x.emp.nik + ' · ' + x.emp.kategori"></span></td>
+                <td class="td text-xs"><span class="font-mono" x-text="jadwalById(x.emp.jadwalId).kode"></span><span class="block text-ink/50" x-text="x.r.sched ? jadwalById(x.emp.jadwalId).masuk + '–' + jadwalById(x.emp.jadwalId).pulang : x.r.jenisHari"></span></td>
+                <td class="td font-mono tabular-nums" x-text="x.r.masuk || '—'"></td>
+                <td class="td font-mono tabular-nums" x-text="x.r.pulang || '—'"></td>
+                <td class="td tabular-nums" :class="x.r.late > db.rules.toleransiTerlambat && 'font-medium text-amber-700'" x-text="x.r.late ? x.r.late + ' mnt' : '—'"></td>
+                <td class="td tabular-nums" x-text="x.r.kerja ? num(x.r.kerja / 60) + ' j' : '—'"></td>
+                <td class="td text-xs"><template x-if="x.r.ot"><span><span class="tabular-nums" x-text="num(x.r.ot) + ' j'"></span> <span class="badge" :class="stCls(x.r.otStatus)" x-text="x.r.otStatus"></span></span></template><span x-show="!x.r.ot" class="text-ink/30">—</span></td>
+                <td class="td"><span class="badge" :class="stCls(x.r.status)" x-text="x.r.status"></span></td>
+                <td class="td text-right"><button @click="openDay(x.emp, absDate)" class="btn-icon"><i class="fa-solid fa-magnifying-glass"></i></button></td>
+              </tr>
+            </template>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ============================================================ LEMBUR -->
+    <section x-show="route === 'lembur'" class="space-y-5">
+      <div class="flex flex-wrap items-end justify-between gap-4">
+        <div><h1 class="display text-4xl">Lembur</h1><p class="mt-2 max-w-3xl text-sm text-ink/60">Lembur terdeteksi otomatis dari jam pulang melewati jadwal (atau masuk di hari libur), dibulatkan ke bawah per <span x-text="num(db.rules.lembur.pembulatan)"></span> jam. Lembur dibayar setelah disetujui (SPL).</p></div>
+        <button x-show="can('ot.approve') && otRows.some(r => r.otStatus === 'Menunggu')" @click="approveAllOT()" class="btn-ok"><i class="fa-solid fa-check-double"></i> Setujui semua yang tampil</button>
+      </div>
+      <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+        <div class="card p-4"><p class="text-xs text-ink/50">Total lembur aktual</p><p class="mt-1 text-2xl font-light tabular-nums" x-text="num(otSummary.total) + ' j'"></p></div>
+        <div class="card p-4"><p class="text-xs text-ink/50">Menunggu persetujuan</p><p class="mt-1 text-2xl font-light tabular-nums text-amber-700" x-text="num(otSummary.menunggu) + ' j'"></p></div>
+        <div class="card p-4"><p class="text-xs text-ink/50">Disetujui (dibayar)</p><p class="mt-1 text-2xl font-light tabular-nums text-emerald-700" x-text="num(otSummary.disetujui) + ' j'"></p></div>
+        <div class="card p-4"><p class="text-xs text-ink/50">Ditolak</p><p class="mt-1 text-2xl font-light tabular-nums" x-text="num(otSummary.ditolak) + ' j'"></p></div>
+        <div class="card p-4"><p class="text-xs text-ink/50">Estimasi nilai disetujui</p><p class="mt-1 text-2xl font-light tabular-nums" x-text="can('emp.gaji.view') ? jt(otSummary.nilai) : '•••'"></p></div>
+      </div>
+      <div class="card flex flex-wrap items-center gap-3 p-4">
+        <select x-model="period" class="input w-auto"><template x-for="p in periodOptions.filter(p => p <= curPeriod)"><option :value="p" x-text="'Periode ' + pLabel(p)"></option></template></select>
+        <div class="flex rounded-md bg-surface p-1"><template x-for="s in [['Menunggu','Menunggu'],['Disetujui','Disetujui'],['Ditolak','Ditolak'],['','Semua']]"><button @click="otStatus = s[0]" class="seg" :class="otStatus === s[0] ? 'bg-white text-ink shadow-sm' : 'text-ink/60'" x-text="s[1]"></button></template></div>
+        <select x-model="otKat" class="input w-auto"><option value="">Lapangan &amp; kantor</option><option>Lapangan</option><option>Kantor</option></select>
+        <input x-model="otQ" type="search" placeholder="Cari karyawan…" class="input w-48">
+      </div>
+      <p x-show="locked(period)" class="flex items-center gap-2 bg-amber-50 px-4 py-3 text-sm text-amber-900 ring-1 ring-inset ring-amber-600/20"><i class="fa-solid fa-lock"></i> Payroll periode ini sudah diajukan — persetujuan lembur dikunci.</p>
+      <div class="card overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead class="border-b border-black/5"><tr><th class="th">Tanggal</th><th class="th">Karyawan</th><th class="th">Jenis hari</th><th class="th">Masuk – Pulang</th><th class="th">Aktual</th><th class="th">Disetujui</th><th class="th">Rincian pengali</th><th class="th" x-show="can('emp.gaji.view')">Nilai</th><th class="th">Status</th><th class="th"></th></tr></thead>
+          <tbody class="divide-y divide-black/5">
+            <template x-for="r in otRows" :key="r.key">
+              <tr x-data="{ jam: r.otStatus === 'Disetujui' ? r.otJam : (r.otJenis === 'Hari Kerja' ? Math.min(r.ot, db.rules.lembur.maksHarian) : r.ot) }">
+                <td class="td whitespace-nowrap" x-text="fmtDay(r.ds)"></td>
+                <td class="td"><span class="font-medium" x-text="r.emp.nama"></span><span class="block text-xs text-ink/50" x-text="r.emp.kategori + ' · ' + jadwalById(r.emp.jadwalId).kode"></span></td>
+                <td class="td"><span class="badge" :class="r.otJenis === 'Hari Kerja' ? 'bg-surface text-ink/70 ring-black/5' : 'bg-navy/10 text-navy ring-navy/20'" x-text="r.otJenis"></span></td>
+                <td class="td whitespace-nowrap font-mono text-xs tabular-nums" x-text="r.masuk + ' – ' + r.pulang"></td>
+                <td class="td whitespace-nowrap tabular-nums"><span x-text="num(r.ot) + ' j'"></span><i x-show="r.otWarn" class="fa-solid fa-triangle-exclamation ml-1 text-amber-600" :title="'Melebihi batas ' + db.rules.lembur.maksHarian + ' jam/hari'"></i></td>
+                <td class="td"><input x-show="can('ot.approve') && r.otStatus === 'Menunggu' && !locked(period)" x-model.number="jam" type="number" min="0" :max="r.ot" :step="db.rules.lembur.pembulatan" class="input w-20 py-1.5"><span x-show="!(can('ot.approve') && r.otStatus === 'Menunggu' && !locked(period))" class="tabular-nums" x-text="r.otStatus === 'Disetujui' ? num(r.otJam) + ' j' : '—'"></span></td>
+                <td class="td whitespace-nowrap text-xs text-ink/60"><span x-text="otCalc(r, r.otStatus === 'Disetujui' ? r.otJam : jam).text"></span> = <span class="font-medium text-ink" x-text="num(otCalc(r, r.otStatus === 'Disetujui' ? r.otJam : jam).ekuivalen) + ' j'"></span></td>
+                <td class="td whitespace-nowrap tabular-nums" x-show="can('emp.gaji.view')" x-text="fmt(otCalc(r, r.otStatus === 'Disetujui' ? r.otJam : jam).nilai)"></td>
+                <td class="td"><span class="badge" :class="stCls(r.otStatus)" x-text="r.otStatus"></span><span x-show="r.ap && r.ap.oleh" class="block pt-1 text-[10px] text-ink/40" x-text="r.ap?.oleh"></span></td>
+                <td class="td whitespace-nowrap text-right">
+                  <template x-if="can('ot.approve') && !locked(period)">
+                    <span>
+                      <button x-show="r.otStatus !== 'Disetujui'" @click="setOT(r, 'Disetujui', jam)" class="btn-icon text-emerald-600" title="Setujui"><i class="fa-solid fa-check"></i></button>
+                      <button x-show="r.otStatus !== 'Ditolak'" @click="setOT(r, 'Ditolak')" class="btn-icon text-red-600" title="Tolak"><i class="fa-solid fa-xmark"></i></button>
+                    </span>
+                  </template>
+                </td>
+              </tr>
+            </template>
+            <tr x-show="!otRows.length"><td colspan="10" class="td py-10 text-center text-ink/50">Tidak ada data lembur dengan filter ini.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ============================================================ PENGAJUAN -->
+    <section x-show="route === 'pengajuan'" class="space-y-5">
+      <div class="flex flex-wrap items-end justify-between gap-4">
+        <div><h1 class="display text-4xl">Izin, Sakit &amp; Cuti</h1><p class="mt-2 text-sm text-ink/60">Pengajuan yang disetujui otomatis mengubah status kehadiran (tidak dihitung alpa).</p></div>
+        <button @click="openLeave()" class="btn-primary"><i class="fa-solid fa-plus text-xs"></i> Catat Izin / Cuti</button>
+      </div>
+      <div class="flex rounded-md bg-white p-1 ring-1 ring-black/10 w-fit"><template x-for="s in [['','Semua'],['Menunggu','Menunggu'],['Disetujui','Disetujui'],['Ditolak','Ditolak']]"><button @click="lvStatus = s[0]" class="seg" :class="lvStatus === s[0] ? 'bg-ink text-white' : 'text-ink/60'" x-text="s[1]"></button></template></div>
+      <div class="card overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead class="border-b border-black/5"><tr><th class="th">Karyawan</th><th class="th">Jenis</th><th class="th">Tanggal</th><th class="th">Hari</th><th class="th">Keterangan</th><th class="th">Status</th><th class="th"></th></tr></thead>
+          <tbody class="divide-y divide-black/5">
+            <template x-for="l in leaveRows" :key="l.id">
+              <tr>
+                <td class="td"><span class="font-medium" x-text="empById(l.empId).nama"></span><span class="block text-xs text-ink/50" x-text="'Diajukan ' + fmtDate(l.diajukan)"></span></td>
+                <td class="td"><span class="badge" :class="stCls(l.jenis)" x-text="l.jenis"></span></td>
+                <td class="td whitespace-nowrap" x-text="fmtDate(l.dari) + (l.sampai !== l.dari ? ' – ' + fmtDate(l.sampai) : '')"></td>
+                <td class="td tabular-nums" x-text="leaveDays(l)"></td>
+                <td class="td text-ink/60" x-text="l.ket"></td>
+                <td class="td"><span class="badge" :class="stCls(l.status)" x-text="l.status"></span><span x-show="l.oleh" class="block pt-1 text-[10px] text-ink/40" x-text="l.oleh"></span></td>
+                <td class="td whitespace-nowrap text-right"><template x-if="can('leave.approve') && l.status === 'Menunggu'"><span><button @click="setLeave(l, 'Disetujui')" class="btn-ok btn-sm">Setujui</button> <button @click="setLeave(l, 'Ditolak')" class="btn-light btn-sm">Tolak</button></span></template></td>
+              </tr>
+            </template>
+            <tr x-show="!leaveRows.length"><td colspan="7" class="td py-10 text-center text-ink/50">Tidak ada data.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ============================================================ PAYROLL -->
+    <section x-show="route === 'payroll'" class="space-y-6">
+      <template x-if="!run">
+        <div class="space-y-6">
+          <div class="flex flex-wrap items-end justify-between gap-4">
+            <div><h1 class="display text-4xl">Proses Payroll</h1><p class="mt-2 max-w-3xl text-sm text-ink/60">Alur: <strong>Keuangan</strong> menghitung &amp; mengajukan → <strong>Pimpinan</strong> menyetujui → <strong>Keuangan</strong> membayar → slip terbit di portal karyawan. Periode absensi tgl <span x-text="db.rules.cutoff + 1"></span> s/d <span x-text="db.rules.cutoff"></span> (cut-off).</p></div>
+            <div x-show="can('payroll.process')" class="flex flex-wrap gap-2">
+              <select x-model="newPeriod" class="input w-auto"><template x-for="p in availablePeriods"><option :value="p" x-text="'Periode ' + pLabel(p)"></option></template><option x-show="!availablePeriods.length" value="">Semua periode sudah diproses</option></select>
+              <button @click="createRun()" :disabled="!availablePeriods.includes(newPeriod)" class="btn-primary"><i class="fa-solid fa-calculator"></i> Hitung Payroll</button>
+            </div>
+          </div>
+          <div class="card overflow-x-auto">
+            <table class="w-full text-sm">
+              <thead class="border-b border-black/5"><tr><th class="th">Periode</th><th class="th">Rentang absensi</th><th class="th">Karyawan</th><th class="th">Total pendapatan</th><th class="th">Take home pay</th><th class="th">Biaya perusahaan</th><th class="th">Status</th><th class="th"></th></tr></thead>
+              <tbody class="divide-y divide-black/5">
+                <template x-for="r in runsSorted" :key="r.id">
+                  <tr class="cursor-pointer hover:bg-surface/60" @click="runId = r.id">
+                    <td class="td font-semibold" x-text="pLabel(r.period)"></td>
+                    <td class="td text-xs text-ink/60" x-text="pRange(r.period)"></td>
+                    <td class="td tabular-nums" x-text="r.totals.karyawan"></td>
+                    <td class="td tabular-nums" x-text="fmt(r.totals.pendapatan)"></td>
+                    <td class="td font-medium tabular-nums" x-text="fmt(r.totals.thp)"></td>
+                    <td class="td tabular-nums" x-text="fmt(r.totals.biaya)"></td>
+                    <td class="td"><span class="badge" :class="runSt(r.status).cls"><i class="fa-solid" :class="runSt(r.status).icon"></i><span x-text="r.status"></span></span><span x-show="r.rejectNote" class="block pt-1 text-[10px] text-red-600">Dikembalikan pimpinan</span></td>
+                    <td class="td text-right"><i class="fa-solid fa-chevron-right text-xs text-ink/30"></i></td>
+                  </tr>
+                </template>
+                <tr x-show="!runsSorted.length"><td colspan="8" class="td py-10 text-center text-ink/50">Belum ada payroll.</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="card p-6">
+            <div class="flex flex-wrap items-start justify-between gap-3">
+              <div><h2 class="font-semibold">Estimasi periode berjalan — <span x-text="pLabel(curPeriod)"></span></h2><p class="text-xs text-ink/50" x-text="pRange(curPeriod) + ' · dihitung dari absensi sampai hari ini (belum disimpan)'"></p></div>
+            </div>
+            <div class="mt-4 grid gap-4 sm:grid-cols-4">
+              <div><p class="text-xs text-ink/50">Karyawan</p><p class="text-xl font-light tabular-nums" x-text="previewRun.totals.karyawan"></p></div>
+              <div><p class="text-xs text-ink/50">Upah lembur (disetujui)</p><p class="text-xl font-light tabular-nums" x-text="fmt(previewRun.totals.lembur)"></p></div>
+              <div><p class="text-xs text-ink/50">Take home pay</p><p class="text-xl font-light tabular-nums" x-text="fmt(previewRun.totals.thp)"></p></div>
+              <div><p class="text-xs text-ink/50">Biaya perusahaan</p><p class="text-xl font-light tabular-nums" x-text="fmt(previewRun.totals.biaya)"></p></div>
+            </div>
+          </div>
+        </div>
+      </template>
+
+      <template x-if="run">
+        <div class="space-y-6">
+          <div class="flex flex-wrap items-end justify-between gap-4">
+            <div>
+              <button @click="runId = ''" class="text-sm text-ink/60 hover:text-navy"><i class="fa-solid fa-arrow-left text-xs"></i> Semua periode</button>
+              <h1 class="display mt-3 text-4xl">Payroll <span x-text="pLabel(run.period)"></span></h1>
+              <p class="mt-2 text-sm text-ink/60"><span x-text="pRange(run.period)"></span> · dihitung <span x-text="fmtTime(run.calculatedAt)"></span> oleh <span x-text="run.createdBy"></span></p>
+            </div>
+            <div class="flex flex-wrap gap-2">
+              <a :href="printUrl('slip', run)" target="_blank" class="btn-light"><i class="fa-solid fa-print"></i> Semua Slip</a>
+              <a :href="printUrl('pengesahan', run)" target="_blank" class="btn-light"><i class="fa-solid fa-stamp"></i> Lembar Pengesahan</a>
+              <button @click="exportRun(run)" class="btn-light"><i class="fa-solid fa-file-csv"></i> Export</button>
+            </div>
+          </div>
+
+          <!-- stepper -->
+          <div class="card p-5">
+            <ol class="grid gap-4 sm:grid-cols-4">
+              <template x-for="(s, i) in [['Draft','Dihitung Keuangan','fa-calculator'],['Diajukan','Menunggu Pimpinan','fa-paper-plane'],['Disetujui','Disetujui Pimpinan','fa-stamp'],['Dibayar','Ditransfer ke rekening','fa-money-bill-transfer']]">
+                <li class="flex items-center gap-3">
+                  <span class="grid h-10 w-10 shrink-0 place-items-center rounded-full text-sm" :class="stepIndex(run.status) > i ? 'bg-emerald-600 text-white' : stepIndex(run.status) === i ? 'bg-navy text-white ring-4 ring-navy/15' : 'bg-surface text-ink/30'"><i class="fa-solid" :class="stepIndex(run.status) > i ? 'fa-check' : s[2]"></i></span>
+                  <span class="leading-tight"><span class="block text-sm font-semibold" x-text="s[0]"></span><span class="block text-xs text-ink/50" x-text="s[1]"></span></span>
+                </li>
+              </template>
+            </ol>
+            <p x-show="run.rejectNote && run.status === 'Draft'" class="mt-4 bg-red-50 px-4 py-3 text-sm text-red-800"><i class="fa-solid fa-circle-xmark"></i> Dikembalikan pimpinan: <span x-text="run.rejectNote"></span></p>
+            <div class="mt-5 flex flex-wrap gap-2 border-t border-black/5 pt-5">
+              <template x-if="run.status === 'Draft' && can('payroll.process')"><div class="flex flex-wrap gap-2">
+                <button @click="recalc(run)" class="btn-light"><i class="fa-solid fa-rotate"></i> Hitung Ulang</button>
+                <button @click="openAdj(run)" class="btn-light"><i class="fa-solid fa-plus-minus"></i> Penyesuaian</button>
+                <button @click="askNote(run, 'Diajukan')" class="btn-primary"><i class="fa-solid fa-paper-plane"></i> Ajukan ke Pimpinan</button>
+                <button @click="deleteRun(run)" class="btn-light text-red-600"><i class="fa-solid fa-trash-can"></i> Hapus Draft</button>
+              </div></template>
+              <template x-if="run.status === 'Diajukan' && can('payroll.approve')"><div class="flex flex-wrap gap-2">
+                <button @click="askNote(run, 'Disetujui')" class="btn-ok"><i class="fa-solid fa-stamp"></i> Setujui Payroll</button>
+                <button @click="askNote(run, 'Ditolak')" class="btn-danger"><i class="fa-solid fa-rotate-left"></i> Kembalikan / Tolak</button>
+              </div></template>
+              <template x-if="run.status === 'Disetujui' && can('payroll.pay')"><div class="flex flex-wrap gap-2">
+                <a :href="printUrl('transfer', run)" target="_blank" class="btn-light"><i class="fa-solid fa-building-columns"></i> Daftar Transfer Bank</a>
+                <button @click="askNote(run, 'Dibayar')" class="btn-ok"><i class="fa-solid fa-money-bill-transfer"></i> Tandai Sudah Dibayar</button>
+              </div></template>
+              <p x-show="run.status === 'Diajukan' && !can('payroll.approve')" class="text-sm text-ink/60"><i class="fa-solid fa-hourglass-half text-amber-600"></i> Menunggu persetujuan Pimpinan.</p>
+              <p x-show="run.status === 'Disetujui' && !can('payroll.pay')" class="text-sm text-ink/60"><i class="fa-solid fa-circle-check text-blue-600"></i> Disetujui — menunggu pembayaran oleh Keuangan.</p>
+              <p x-show="run.status === 'Dibayar'" class="text-sm text-emerald-700"><i class="fa-solid fa-circle-check"></i> Dibayar <span x-text="fmtDate(run.paidAt)"></span>. Slip gaji sudah tersedia di portal karyawan.</p>
+            </div>
+          </div>
+
+          <div class="grid gap-3 sm:grid-cols-3 xl:grid-cols-6">
+            <template x-for="k in [['Karyawan', run.totals.karyawan, ''], ['Gaji pokok', fmt(run.totals.pokok), ''], ['Upah lembur', fmt(run.totals.lembur), num(run.totals.jamLembur) + ' jam'], ['PPh 21', fmt(run.totals.pph), ''], ['Take home pay', fmt(run.totals.thp), ''], ['Total biaya perusahaan', fmt(run.totals.biaya), 'termasuk BPJS perusahaan']]">
+              <div class="card p-4"><p class="text-xs text-ink/50" x-text="k[0]"></p><p class="mt-1 text-lg font-medium tabular-nums" x-text="k[1]"></p><p class="text-[11px] text-ink/40" x-text="k[2]"></p></div>
+            </template>
+          </div>
+
+          <div class="card">
+            <div class="flex flex-wrap items-center justify-between gap-3 border-b border-black/5 px-5 py-4"><h2 class="font-semibold">Rincian per karyawan</h2><input x-model="runQ" type="search" placeholder="Cari…" class="input w-56"></div>
+            <div class="overflow-x-auto"><table class="w-full text-sm">
+              <thead class="border-b border-black/5"><tr><th class="th">Karyawan</th><th class="th text-center">Hadir</th><th class="th text-center">Alpa</th><th class="th text-right">Lembur</th><th class="th text-right">Gaji pokok</th><th class="th text-right">Tunjangan</th><th class="th text-right">Upah lembur</th><th class="th text-right">Pendapatan</th><th class="th text-right">BPJS</th><th class="th text-right">PPh 21</th><th class="th text-right">Lain-lain</th><th class="th text-right">THP</th><th class="th"></th></tr></thead>
+              <tbody class="divide-y divide-black/5">
+                <template x-for="l in runLines" :key="l.empId">
+                  <tr class="hover:bg-surface/60">
+                    <td class="td min-w-[210px]"><button @click="lineDetail = l" class="text-left"><span class="block whitespace-nowrap font-medium hover:text-navy" x-text="l.nama"></span><span class="block max-w-[200px] truncate text-xs text-ink/50" x-text="l.kategori + ' · ' + l.unit"></span></button><i x-show="l.peringatan.length" class="fa-solid fa-triangle-exclamation text-xs text-amber-600" :title="l.peringatan.join('\n')"></i></td>
+                    <td class="td text-center tabular-nums" x-text="l.hadir.hadir + '/' + l.hadir.jadwal"></td>
+                    <td class="td text-center tabular-nums" :class="l.hadir.alpa && 'text-red-600'" x-text="l.hadir.alpa || '—'"></td>
+                    <td class="td whitespace-nowrap text-right tabular-nums" x-text="l.jamLembur ? num(l.jamLembur) + ' j' : '—'"></td>
+                    <td class="td whitespace-nowrap text-right tabular-nums" x-text="fmt(comp(l, 'pendapatan', 'GP'))"></td>
+                    <td class="td whitespace-nowrap text-right tabular-nums" x-text="fmt(comp(l, 'pendapatan', 'TJ') + comp(l, 'pendapatan', 'TL') + comp(l, 'pendapatan', 'TM') + comp(l, 'pendapatan', 'TT'))"></td>
+                    <td class="td whitespace-nowrap text-right tabular-nums" x-text="fmt(l.nilaiLembur)"></td>
+                    <td class="td whitespace-nowrap text-right tabular-nums" x-text="fmt(l.totalPendapatan)"></td>
+                    <td class="td whitespace-nowrap text-right tabular-nums text-red-700" x-text="fmt(comp(l, 'potongan', 'BK') + comp(l, 'potongan', 'JHT') + comp(l, 'potongan', 'JP'))"></td>
+                    <td class="td whitespace-nowrap text-right tabular-nums text-red-700" x-text="fmt(comp(l, 'potongan', 'PPH'))"></td>
+                    <td class="td whitespace-nowrap text-right tabular-nums" x-text="(comp(l, 'pendapatan', 'ADJ') ? '+' + fmt(comp(l, 'pendapatan', 'ADJ')) + ' ' : '') + (comp(l, 'potongan', 'ADJ') + comp(l, 'potongan', 'PA') ? '−' + fmt(comp(l, 'potongan', 'ADJ') + comp(l, 'potongan', 'PA')) : '') || '—'"></td>
+                    <td class="td whitespace-nowrap text-right font-semibold tabular-nums" x-text="fmt(l.thp)"></td>
+                    <td class="td whitespace-nowrap text-right"><button @click="lineDetail = l" class="btn-icon" title="Rincian"><i class="fa-solid fa-list"></i></button><a :href="printUrl('slip', run, l.empId)" target="_blank" class="btn-icon" title="Slip"><i class="fa-solid fa-print"></i></a></td>
+                  </tr>
+                </template>
+              </tbody>
+              <tfoot class="border-t-2 border-ink/10 bg-surface/60 font-semibold"><tr><td class="td" colspan="4">Total</td><td class="td text-right tabular-nums" x-text="fmt(run.totals.pokok)"></td><td class="td"></td><td class="td text-right tabular-nums" x-text="fmt(run.totals.lembur)"></td><td class="td text-right tabular-nums" x-text="fmt(run.totals.pendapatan)"></td><td class="td" colspan="3"></td><td class="td text-right tabular-nums" x-text="fmt(run.totals.thp)"></td><td></td></tr></tfoot>
+            </table></div>
+          </div>
+
+          <div class="grid gap-4 lg:grid-cols-2">
+            <div class="card p-6">
+              <div class="flex items-center justify-between"><h2 class="font-semibold">Penyesuaian periode ini</h2><button x-show="run.status === 'Draft' && can('payroll.process')" @click="openAdj(run)" class="btn-light btn-sm"><i class="fa-solid fa-plus"></i> Tambah</button></div>
+              <p class="text-xs text-ink/50">Insentif, bonus, kasbon, potongan lain di luar rumus otomatis.</p>
+              <ul class="mt-4 divide-y divide-black/5">
+                <template x-for="a in runAdjustments(run)" :key="a.id"><li class="flex items-center gap-3 py-2.5 text-sm"><span class="badge" :class="a.jenis === 'Pendapatan' ? 'bg-emerald-50 text-emerald-700 ring-emerald-600/20' : 'bg-red-50 text-red-700 ring-red-600/20'" x-text="a.jenis === 'Pendapatan' ? '+' : '−'"></span><span class="flex-1"><span class="block font-medium" x-text="a.nama"></span><span class="text-xs text-ink/50" x-text="empById(a.empId).nama"></span></span><span class="tabular-nums" x-text="fmt(a.nilai)"></span><button x-show="run.status === 'Draft' && can('payroll.process')" @click="removeAdj(a)" class="btn-icon"><i class="fa-solid fa-trash-can text-xs"></i></button></li></template>
+                <li x-show="!runAdjustments(run).length" class="py-3 text-sm text-ink/50">Tidak ada penyesuaian.</li>
+              </ul>
+            </div>
+            <div class="card p-6">
+              <h2 class="font-semibold">Riwayat &amp; jejak persetujuan</h2>
+              <ol class="mt-4 space-y-4 border-l-2 border-black/5 pl-5">
+                <template x-for="h in [...run.history].reverse()"><li class="relative"><span class="absolute -left-[27px] top-1 grid h-3 w-3 place-items-center rounded-full ring-4 ring-white" :class="h.status === 'Ditolak' ? 'bg-red-500' : h.status === 'Dibayar' ? 'bg-emerald-500' : 'bg-navy'"></span><p class="text-sm"><span class="badge mr-1" :class="runSt(h.status).cls" x-text="h.status"></span> oleh <span class="font-medium" x-text="h.oleh"></span> <span class="text-ink/50" x-text="'(' + roleName(h.role) + ')'"></span></p><p class="text-xs text-ink/50" x-text="fmtTime(h.at)"></p><p x-show="h.catatan" class="mt-1 text-sm italic text-ink/70" x-text="'“' + h.catatan + '”'"></p></li></template>
+              </ol>
+            </div>
+          </div>
+        </div>
+      </template>
+    </section>
+
+    <!-- ============================================================ SLIP & DOKUMEN -->
+    <section x-show="route === 'slip'" class="space-y-5">
+      <div><h1 class="display text-4xl">Slip Gaji &amp; Dokumen</h1><p class="mt-2 text-sm text-ink/60">Bukti-bukti payroll siap cetak / simpan PDF: slip gaji, kartu absensi, lembar pengesahan dan daftar transfer bank.</p></div>
+      <div class="grid gap-4 xl:grid-cols-12">
+        <div class="card flex flex-col xl:col-span-4">
+          <div class="space-y-3 border-b border-black/5 p-4">
+            <select x-model="slipRun" @change="slipEmp = ''" class="input"><template x-for="r in slipRuns"><option :value="r.id" x-text="'Payroll ' + pLabel(r.period) + ' — ' + r.status"></option></template></select>
+            <div class="grid grid-cols-2 gap-1 rounded-md bg-surface p-1 text-center">
+              <template x-for="d in [['slip','Slip gaji'],['absensi','Kartu absensi'],['pengesahan','Pengesahan'],['transfer','Transfer bank']]"><button @click="slipDoc = d[0]" class="seg" :class="slipDoc === d[0] ? 'bg-white text-ink shadow-sm' : 'text-ink/60'" x-text="d[1]"></button></template>
+            </div>
+            <input x-show="['slip','absensi'].includes(slipDoc)" x-model="slipQ" type="search" placeholder="Cari karyawan…" class="input">
+          </div>
+          <ul x-show="['slip','absensi'].includes(slipDoc)" class="max-h-[560px] flex-1 divide-y divide-black/5 overflow-y-auto">
+            <template x-for="l in slipLines" :key="l.empId">
+              <li><button @click="slipEmp = l.empId" class="flex w-full items-center gap-3 px-4 py-2.5 text-left hover:bg-surface" :class="(slipEmp || slipRunObj.lines[0].empId) === l.empId && 'bg-navy/5 ring-1 ring-inset ring-navy/20'"><span class="grid h-8 w-8 shrink-0 place-items-center bg-navy text-[10px] font-semibold text-white" x-text="initials(l.nama)"></span><span class="min-w-0 flex-1"><span class="block truncate text-sm font-medium" x-text="l.nama"></span><span class="block truncate text-xs text-ink/50" x-text="l.nik + ' · ' + l.kategori"></span></span><span class="text-xs font-medium tabular-nums" x-text="fmt(l.thp)"></span></button></li>
+            </template>
+          </ul>
+          <div x-show="!['slip','absensi'].includes(slipDoc)" class="p-4 text-sm text-ink/60"><p x-show="slipDoc === 'pengesahan'">Rekap total payroll dengan jejak persetujuan &amp; kolom tanda tangan Keuangan dan Pimpinan.</p><p x-show="slipDoc === 'transfer'">Daftar nominal transfer per rekening karyawan untuk diserahkan ke bank.</p></div>
+        </div>
+        <div class="card overflow-hidden xl:col-span-8">
+          <div class="flex items-center justify-between border-b border-black/5 px-4 py-3"><p class="text-sm font-medium">Pratinjau</p><div class="flex gap-2"><a x-show="slipDoc === 'slip' && slipRunObj" :href="printUrl('slip', slipRunObj)" target="_blank" class="btn-light btn-sm"><i class="fa-solid fa-layer-group"></i> Cetak semua slip</a><a :href="slipSrc.replace('&embed=1', '')" target="_blank" class="btn-dark btn-sm"><i class="fa-solid fa-print"></i> Buka &amp; cetak</a></div></div>
+          <template x-if="route === 'slip'"><iframe :src="slipSrc" class="h-[720px] w-full border-0 bg-surface" title="Pratinjau dokumen"></iframe></template>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================ LAPORAN -->
+    <section x-show="route === 'laporan'" class="space-y-5">
+      <div class="flex flex-wrap items-end justify-between gap-4">
+        <div><h1 class="display text-4xl">Laporan &amp; Analisa</h1><p class="mt-2 text-sm text-ink/60">Format laporan payroll untuk analisa biaya tenaga kerja lapangan vs kantor, lembur, BPJS dan PPh 21.</p></div>
+        <select x-model="repRun" class="input w-auto"><template x-for="r in runsSorted"><option :value="r.id" x-text="'Payroll ' + pLabel(r.period) + ' — ' + r.status"></option></template></select>
+      </div>
+      <template x-if="repRunObj">
+        <div class="space-y-5">
+          <div class="flex gap-6 overflow-x-auto border-b border-black/10">
+            <template x-for="t in [['ringkasan','Ringkasan biaya'],['lembur','Analisa lembur'],['bpjs','BPJS'],['pph','PPh 21'],['tren','Tren periode']]"><button @click="repTab = t[0]" class="tab" :class="repTab === t[0] && 'is-active'" x-text="t[1]"></button></template>
+          </div>
+
+          <div x-show="repTab === 'ringkasan'" class="space-y-5">
+            <div class="card p-6">
+              <div class="flex flex-wrap items-start justify-between gap-3"><div><h2 class="font-semibold">Komposisi biaya tenaga kerja</h2><p class="text-xs text-ink/50" x-text="'Total biaya ' + fmt(repRunObj.totals.biaya)"></p></div><button @click="exportRep('ringkasan')" class="btn-light btn-sm"><i class="fa-solid fa-file-csv"></i> Export</button></div>
+              <div class="mt-5 flex h-8 overflow-hidden"><template x-for="p in repComposition"><div :class="p.cls" :style="`width:${p.pct}%`" :title="p.label + ': ' + fmt(p.v)"></div></template></div>
+              <ul class="mt-3 flex flex-wrap gap-x-6 gap-y-2 text-xs"><template x-for="p in repComposition"><li class="inline-flex items-center gap-2"><span class="h-2.5 w-2.5" :class="p.cls"></span><span x-text="p.label"></span><span class="font-medium tabular-nums" x-text="num(p.pct) + '%'"></span></li></template></ul>
+            </div>
+            <template x-for="grp in [['Per kategori (lapangan vs kantor)', repByKat], ['Per unit kerja', repByUnit], ['Per lokasi kerja', repByLok]]">
+              <div class="card overflow-x-auto">
+                <h2 class="border-b border-black/5 px-5 py-4 font-semibold" x-text="grp[0]"></h2>
+                <table class="w-full text-sm">
+                  <thead class="border-b border-black/5"><tr><th class="th">Kelompok</th><th class="th text-right">Orang</th><th class="th text-right">Gaji pokok</th><th class="th text-right">Tunjangan</th><th class="th text-right">Lembur</th><th class="th text-right">% lembur</th><th class="th text-right">BPJS perusahaan</th><th class="th text-right">THP</th><th class="th text-right">Biaya total</th><th class="th text-right">Rata-rata/orang</th></tr></thead>
+                  <tbody class="divide-y divide-black/5">
+                    <template x-for="g in grp[1]" :key="g.k"><tr><td class="td font-medium" x-text="g.k"></td><td class="td text-right tabular-nums" x-text="g.n"></td><td class="td text-right tabular-nums" x-text="fmt(g.pokok)"></td><td class="td text-right tabular-nums" x-text="fmt(g.tunjangan)"></td><td class="td text-right tabular-nums" x-text="fmt(g.lembur)"></td><td class="td text-right tabular-nums" x-text="num(g.lembur / g.pendapatan * 100) + '%'"></td><td class="td text-right tabular-nums" x-text="fmt(g.bpjsPerusahaan)"></td><td class="td text-right tabular-nums" x-text="fmt(g.thp)"></td><td class="td text-right font-semibold tabular-nums" x-text="fmt(g.biaya)"></td><td class="td text-right tabular-nums" x-text="fmt(g.biaya / g.n)"></td></tr></template>
+                  </tbody>
+                </table>
+              </div>
+            </template>
+          </div>
+
+          <div x-show="repTab === 'lembur'" class="space-y-5">
+            <div class="card p-6">
+              <div class="flex flex-wrap items-start justify-between gap-3"><div><h2 class="font-semibold">Lembur per karyawan</h2><p class="text-xs text-ink/50" x-text="num(repRunObj.totals.jamLembur) + ' jam aktual · ' + fmt(repRunObj.totals.lembur)"></p></div><button @click="exportRep('lembur')" class="btn-light btn-sm"><i class="fa-solid fa-file-csv"></i> Export rincian harian</button></div>
+              <div class="mt-5 space-y-2.5">
+                <template x-for="l in repOT" :key="l.empId">
+                  <div class="grid grid-cols-12 items-center gap-3 text-sm">
+                    <span class="col-span-4 truncate sm:col-span-3" x-text="l.nama"></span>
+                    <div class="col-span-5 h-4 bg-surface sm:col-span-6"><div class="h-full" :class="l.kategori === 'Lapangan' ? 'bg-accent' : 'bg-sky'" :style="`width:${l.nilaiLembur / repOT[0].nilaiLembur * 100}%`"></div></div>
+                    <span class="col-span-3 text-right text-xs tabular-nums"><span class="font-medium" x-text="fmt(l.nilaiLembur)"></span><span class="block text-ink/50" x-text="num(l.jamLembur) + ' j · ' + num(l.nilaiLembur / l.totalPendapatan * 100) + '% dr pendapatan'"></span></span>
+                  </div>
+                </template>
+              </div>
+              <p class="mt-4 text-xs text-ink/50"><span class="inline-block h-2 w-2 bg-accent"></span> Lapangan &nbsp; <span class="inline-block h-2 w-2 bg-sky"></span> Kantor</p>
+            </div>
+          </div>
+
+          <div x-show="repTab === 'bpjs'" class="card overflow-x-auto">
+            <div class="flex items-center justify-between border-b border-black/5 px-5 py-4"><h2 class="font-semibold">Iuran BPJS — pekerja &amp; perusahaan</h2><button @click="exportRep('bpjs')" class="btn-light btn-sm"><i class="fa-solid fa-file-csv"></i> Export</button></div>
+            <table class="w-full text-sm">
+              <thead class="border-b border-black/5"><tr><th class="th">Karyawan</th><th class="th text-right">Upah dasar</th><th class="th text-right">Kes 1%</th><th class="th text-right">Kes 4%</th><th class="th text-right">JHT 2%</th><th class="th text-right">JHT 3,7%</th><th class="th text-right">JP 1%</th><th class="th text-right">JP 2%</th><th class="th text-right">JKK</th><th class="th text-right">JKM</th></tr></thead>
+              <tbody class="divide-y divide-black/5">
+                <template x-for="l in repRunObj.lines" :key="l.empId"><tr><td class="td"><span class="font-medium" x-text="l.nama"></span><span class="block text-xs text-ink/50" x-text="l.kategori"></span></td><td class="td text-right tabular-nums" x-text="fmt(l.upahTetap)"></td><template x-for="k in [['potongan','BK'],['perusahaan','BKP'],['potongan','JHT'],['perusahaan','JHTP'],['potongan','JP'],['perusahaan','JPP'],['perusahaan','JKK'],['perusahaan','JKM']]"><td class="td text-right tabular-nums" :class="k[0] === 'perusahaan' && 'bg-surface/60'" x-text="fmt(comp(l, k[0], k[1]))"></td></template></tr></template>
+              </tbody>
+              <tfoot class="border-t-2 border-ink/10 font-semibold"><tr><td class="td">Total</td><td class="td"></td><template x-for="k in [['potongan','BK'],['perusahaan','BKP'],['potongan','JHT'],['perusahaan','JHTP'],['potongan','JP'],['perusahaan','JPP'],['perusahaan','JKK'],['perusahaan','JKM']]"><td class="td text-right tabular-nums" x-text="fmt(sumLines(repRunObj.lines, l => comp(l, k[0], k[1])))"></td></template></tr></tfoot>
+            </table>
+          </div>
+
+          <div x-show="repTab === 'pph'" class="card overflow-x-auto">
+            <div class="flex items-center justify-between border-b border-black/5 px-5 py-4"><div><h2 class="font-semibold">PPh 21 — metode TER bulanan</h2><p class="text-xs text-ink/50">Bruto = pendapatan + premi JKK, JKM &amp; BPJS Kesehatan perusahaan. Masa Desember dihitung ulang tahunan (Pasal 17) — belum termasuk prototype.</p></div><button @click="exportRep('pph')" class="btn-light btn-sm"><i class="fa-solid fa-file-csv"></i> Export</button></div>
+            <table class="w-full text-sm">
+              <thead class="border-b border-black/5"><tr><th class="th">Karyawan</th><th class="th">NPWP</th><th class="th">PTKP</th><th class="th">Kategori</th><th class="th text-right">Bruto</th><th class="th text-right">Tarif</th><th class="th text-right">PPh 21</th></tr></thead>
+              <tbody class="divide-y divide-black/5">
+                <template x-for="l in repRunObj.lines" :key="l.empId"><tr><td class="td font-medium" x-text="l.nama"></td><td class="td font-mono text-xs" x-text="l.npwp || '(NIK KTP)'"></td><td class="td" x-text="l.ptkp"></td><td class="td" x-text="'TER ' + l.pph.kategori"></td><td class="td text-right tabular-nums" x-text="fmt(l.pph.bruto)"></td><td class="td text-right tabular-nums" x-text="num(l.pph.tarif, 2) + '%'"></td><td class="td text-right font-medium tabular-nums" x-text="fmt(l.pph.nilai)"></td></tr></template>
+              </tbody>
+              <tfoot class="border-t-2 border-ink/10 font-semibold"><tr><td class="td" colspan="4">Total</td><td class="td text-right tabular-nums" x-text="fmt(sumLines(repRunObj.lines, l => l.pph.bruto))"></td><td></td><td class="td text-right tabular-nums" x-text="fmt(repRunObj.totals.pph)"></td></tr></tfoot>
+            </table>
+          </div>
+
+          <div x-show="repTab === 'tren'" class="card overflow-x-auto">
+            <h2 class="border-b border-black/5 px-5 py-4 font-semibold">Perbandingan antar periode</h2>
+            <table class="w-full text-sm">
+              <thead class="border-b border-black/5"><tr><th class="th">Periode</th><th class="th">Status</th><th class="th text-right">Karyawan</th><th class="th text-right">Gaji pokok</th><th class="th text-right">Lembur</th><th class="th text-right">Jam lembur</th><th class="th text-right">PPh 21</th><th class="th text-right">THP</th><th class="th text-right">Biaya total</th><th class="th text-right">Δ biaya</th></tr></thead>
+              <tbody class="divide-y divide-black/5">
+                <template x-for="(r, i) in [...runsSorted].reverse()" :key="r.id"><tr><td class="td font-medium" x-text="pLabel(r.period)"></td><td class="td"><span class="badge" :class="runSt(r.status).cls" x-text="r.status"></span></td><td class="td text-right tabular-nums" x-text="r.totals.karyawan"></td><td class="td text-right tabular-nums" x-text="fmt(r.totals.pokok)"></td><td class="td text-right tabular-nums" x-text="fmt(r.totals.lembur)"></td><td class="td text-right tabular-nums" x-text="num(r.totals.jamLembur)"></td><td class="td text-right tabular-nums" x-text="fmt(r.totals.pph)"></td><td class="td text-right tabular-nums" x-text="fmt(r.totals.thp)"></td><td class="td text-right font-semibold tabular-nums" x-text="fmt(r.totals.biaya)"></td><td class="td text-right tabular-nums" x-text="i ? (r.totals.biaya >= [...runsSorted].reverse()[i - 1].totals.biaya ? '+' : '') + num((r.totals.biaya / [...runsSorted].reverse()[i - 1].totals.biaya - 1) * 100) + '%' : '—'"></td></tr></template>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </template>
+      <p x-show="!repRunObj" class="card p-6 text-sm text-ink/50">Belum ada payroll.</p>
+    </section>
+
+    <!-- ============================================================ RUMUS -->
+    <section x-show="route === 'rumus'" class="space-y-5">
+      <div class="flex flex-wrap items-end justify-between gap-4">
+        <div><h1 class="display text-4xl">Rumus &amp; Komponen</h1><p class="mt-2 max-w-3xl text-sm text-ink/60">Parameter perhitungan payroll. Nilai bawaan mengikuti ketentuan umum (PP 35/2021, BPJS, PP 58/2023) dan <strong>dapat disesuaikan</strong> setelah format lengkap perusahaan diterima.</p></div>
+        <div x-show="can('rules.edit')" class="flex gap-2"><button @click="resetRules()" class="btn-light"><i class="fa-solid fa-rotate-left"></i> Bawaan</button><button @click="saveRules()" class="btn-primary"><i class="fa-solid fa-floppy-disk"></i> Simpan Parameter</button></div>
+      </div>
+      <div class="flex gap-6 overflow-x-auto border-b border-black/10">
+        <template x-for="t in [['lembur','Lembur'],['komponen','Komponen gaji'],['bpjs','BPJS'],['pph','PPh 21 TER'],['simulasi','Simulator']]"><button @click="ruleTab = t[0]" class="tab" :class="ruleTab === t[0] && 'is-active'" x-text="t[1]"></button></template>
+      </div>
+      <fieldset :disabled="!can('rules.edit')">
+        <div x-show="ruleTab === 'lembur'" class="grid gap-4 lg:grid-cols-2">
+          <div class="card p-6">
+            <h2 class="font-semibold">Upah lembur per jam</h2>
+            <div class="mt-3 bg-ink p-4 font-mono text-sm text-white">Upah/jam = <span class="text-sky" x-text="rulesDraft.lembur.dasar === 'pokok' ? 'Gaji pokok' : '(Gaji pokok + tunjangan tetap)'"></span> ÷ <span class="text-accent" x-text="rulesDraft.lembur.pembagi"></span><br>Upah lembur = Upah/jam × Σ(jam × pengali)</div>
+            <div class="mt-4 grid gap-4 sm:grid-cols-2">
+              <label><span class="label">Dasar upah lembur</span><select x-model="rulesDraft.lembur.dasar" class="input"><option value="pokok+tetap">Gaji pokok + tunjangan tetap</option><option value="pokok">Gaji pokok saja</option></select></label>
+              <label><span class="label">Pembagi jam/bulan</span><input type="number" x-model="rulesDraft.lembur.pembagi" class="input"></label>
+              <label><span class="label">Minimal dihitung (jam)</span><input type="number" step="0.25" x-model="rulesDraft.lembur.minimal" class="input"></label>
+              <label><span class="label">Pembulatan ke bawah (jam)</span><input type="number" step="0.25" x-model="rulesDraft.lembur.pembulatan" class="input"></label>
+              <label><span class="label">Batas lembur hari kerja (jam/hari)</span><input type="number" x-model="rulesDraft.lembur.maksHarian" class="input"></label>
+              <label><span class="label">Toleransi terlambat (menit)</span><input type="number" x-model="rulesDraft.toleransiTerlambat" class="input"></label>
+              <label><span class="label">Tanggal cut-off absensi (0 = akhir bulan)</span><input type="number" min="0" max="28" x-model="rulesDraft.cutoff" class="input"></label>
+              <label class="flex items-center gap-3 pt-6"><input type="checkbox" x-model="rulesDraft.lembur.butuhPersetujuan" class="h-4 w-4"><span class="text-sm">Lembur wajib disetujui (SPL)</span></label>
+            </div>
+          </div>
+          <div class="space-y-4">
+            <template x-for="t in [['kerja','Hari kerja biasa','Ketentuan perusahaan: 1,5× jam pertama, 2× jam berikutnya'],['libur6','Hari libur / libur nasional — pola 6 hari kerja','Freeport & Perusahaan (6-1): jam 1–7 ×2, jam 8 ×3, jam 9+ ×4'],['libur5','Hari libur / libur nasional — pola 5 hari kerja','Kantor basic 8 jam: jam 1–8 ×2, jam 9 ×3, jam 10+ ×4']]">
+              <div class="card p-5">
+                <h3 class="font-semibold" x-text="t[1]"></h3><p class="text-xs text-ink/50" x-text="t[2]"></p>
+                <table class="mt-3 w-full text-sm"><thead><tr><th class="th px-0">Sampai jam ke-</th><th class="th px-0">Pengali</th><th class="th px-0">Contoh</th></tr></thead>
+                  <tbody><template x-for="(row, i) in rulesDraft.lembur[t[0]]"><tr><td class="py-1 pr-3"><input type="number" x-model="row.sd" class="input py-1.5"></td><td class="py-1 pr-3"><input type="number" step="0.5" x-model="row.kali" class="input py-1.5"></td><td class="py-1 text-xs text-ink/50" x-text="i === 0 ? 'jam 1–' + row.sd : (row.sd >= 99 ? 'jam ' + (Number(rulesDraft.lembur[t[0]][i - 1].sd) + 1) + ' dst' : 'jam ' + (Number(rulesDraft.lembur[t[0]][i - 1].sd) + 1) + '–' + row.sd)"></td></tr></template></tbody>
+                </table>
+              </div>
+            </template>
+          </div>
+        </div>
+
+        <div x-show="ruleTab === 'komponen'" class="grid gap-4 lg:grid-cols-2">
+          <div class="card p-6">
+            <h2 class="font-semibold">Struktur komponen slip gaji</h2>
+            <table class="mt-4 w-full text-sm"><thead class="border-b border-black/5"><tr><th class="th px-0">Kode</th><th class="th">Komponen</th><th class="th">Sifat</th><th class="th">Rumus</th></tr></thead>
+              <tbody class="divide-y divide-black/5">
+                <template x-for="c in [['GP','Gaji pokok','Tetap','Bulanan; pro-rata jika masuk di tengah periode. Harian: upah harian × hari dibayar'],['TJ','Tunjangan jabatan','Tetap','Nominal per karyawan'],['TL','Tunjangan lokasi / remote area','Tetap','Dari master lokasi kerja'],['TM','Tunjangan makan','Tidak tetap','Nominal × hari hadir'],['TT','Tunjangan transport','Tidak tetap','Nominal × hari hadir'],['LB','Upah lembur','Tidak tetap','Upah/jam × jam ekuivalen (disetujui)'],['ADJ','Penyesuaian (+/−)','Tidak tetap','Insentif, bonus, kasbon — input Keuangan'],['PA','Potongan alpa','Potongan','(Pokok + tetap) ÷ hari kerja/bulan × hari alpa'],['BK/JHT/JP','Iuran BPJS pekerja','Potongan','% × upah (dengan batas maksimum)'],['PPH','PPh 21','Potongan','Bruto × tarif TER sesuai PTKP']]">
+                  <tr><td class="py-2.5 font-mono text-xs text-navy" x-text="c[0]"></td><td class="td font-medium" x-text="c[1]"></td><td class="td text-xs" x-text="c[2]"></td><td class="td text-xs text-ink/60" x-text="c[3]"></td></tr>
+                </template>
+              </tbody>
+            </table>
+          </div>
+          <div class="card p-6">
+            <h2 class="font-semibold">Parameter umum</h2>
+            <div class="mt-4 grid gap-4">
+              <label><span class="label">Upah minimum acuan (UMK/UMSK) — peringatan jika gaji pokok di bawah nilai ini</span><input type="number" x-model="rulesDraft.umk" class="input"><span class="mt-1 block text-[11px] text-amber-700">Nilai contoh. Sesuaikan dengan UMK Kabupaten Mimika / UMSK sektor yang berlaku.</span></label>
+              <label class="flex items-center gap-3"><input type="checkbox" x-model="rulesDraft.potongAlpa" class="h-4 w-4"><span class="text-sm">Potong upah untuk hari alpa (karyawan bulanan)</span></label>
+            </div>
+            <div class="mt-6 bg-surface p-4 text-sm text-ink/70">
+              <p class="font-medium text-ink">Status kehadiran yang dibayar</p>
+              <p class="mt-1">Hadir, Terlambat, Tidak Lengkap, Dinas → dihitung hadir (tunjangan harian dibayar). Izin/Sakit/Cuti disetujui → tidak dipotong. Alpa → dipotong (jika aktif).</p>
+            </div>
+          </div>
+        </div>
+
+        <div x-show="ruleTab === 'bpjs'" class="card p-6">
+          <h2 class="font-semibold">Tarif BPJS (% dari upah = gaji pokok + tunjangan tetap)</h2>
+          <div class="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <template x-for="f in [['kesPekerja','Kesehatan — pekerja (%)'],['kesPerusahaan','Kesehatan — perusahaan (%)'],['kesMaks','Batas upah Kesehatan (Rp)'],['jhtPekerja','JHT — pekerja (%)'],['jhtPerusahaan','JHT — perusahaan (%)'],['jpPekerja','JP — pekerja (%)'],['jpPerusahaan','JP — perusahaan (%)'],['jpMaks','Batas upah JP (Rp)'],['jkm','JKM — perusahaan (%)'],['jkkKantor','JKK kantor (%)'],['jkkLapangan','JKK lapangan (%) — risiko tinggi']]">
+              <label><span class="label" x-text="f[1]"></span><input type="number" step="0.01" x-model="rulesDraft.bpjs[f[0]]" class="input"></label>
+            </template>
+          </div>
+          <p class="mt-4 text-xs text-ink/50">JKK berkisar 0,24%–1,74% sesuai tingkat risiko lingkungan kerja. Batas upah JP diperbarui tiap tahun oleh BPJS Ketenagakerjaan.</p>
+        </div>
+
+        <div x-show="ruleTab === 'pph'" class="grid gap-4 lg:grid-cols-2">
+          <div class="card p-6">
+            <h2 class="font-semibold">Metode PPh 21</h2>
+            <div class="mt-4 space-y-3">
+              <label class="flex items-start gap-3 rounded-md p-3 ring-1 ring-black/10"><input type="radio" value="gross" x-model="rulesDraft.pph.metode" class="mt-1"><span><span class="block font-medium">Gross</span><span class="text-sm text-ink/60">PPh 21 dipotong dari gaji karyawan.</span></span></label>
+              <label class="flex items-start gap-3 rounded-md p-3 ring-1 ring-black/10"><input type="radio" value="ditanggung" x-model="rulesDraft.pph.metode" class="mt-1"><span><span class="block font-medium">Ditanggung perusahaan</span><span class="text-sm text-ink/60">PPh 21 menjadi beban perusahaan, tidak memotong THP.</span></span></label>
+            </div>
+            <div class="mt-5 bg-ink p-4 font-mono text-sm text-white">Bruto = Pendapatan + JKK + JKM + BPJS Kes (perusahaan)<br>PPh 21 = Bruto × Tarif TER(<span class="text-sky">kategori PTKP</span>)</div>
+            <table class="mt-4 w-full text-sm"><thead><tr><th class="th px-0">Kategori</th><th class="th">Status PTKP</th></tr></thead><tbody class="divide-y divide-black/5"><tr><td class="py-2 font-semibold">TER A</td><td class="td">TK/0, TK/1, K/0</td></tr><tr><td class="py-2 font-semibold">TER B</td><td class="td">TK/2, TK/3, K/1, K/2</td></tr><tr><td class="py-2 font-semibold">TER C</td><td class="td">K/3</td></tr></tbody></table>
+          </div>
+          <div class="card p-6">
+            <div class="flex items-center justify-between"><h2 class="font-semibold">Tabel TER bulanan</h2><div class="flex rounded-md bg-surface p-1"><template x-for="c in ['A','B','C']"><span role="button" tabindex="0" @click="terCat = c" @keydown.enter="terCat = c" class="seg cursor-pointer" :class="terCat === c ? 'bg-white shadow-sm' : 'text-ink/60'" x-text="c"></span></template></div></div>
+            <div class="mt-3 max-h-[420px] overflow-y-auto"><table class="w-full text-sm"><thead class="sticky top-0 bg-white"><tr><th class="th px-0">Penghasilan bruto/bulan</th><th class="th text-right">Tarif</th></tr></thead><tbody class="divide-y divide-black/5"><template x-for="r in terTable"><tr><td class="py-1.5 tabular-nums" x-text="r.to === Infinity ? '> ' + fmt(r.from) : fmt(r.from === 0 ? 0 : r.from + 1) + ' – ' + fmt(r.to)"></td><td class="py-1.5 text-right font-medium tabular-nums" x-text="num(r.t, 2) + '%'"></td></tr></template></tbody></table></div>
+            <p class="mt-3 text-[11px] text-amber-700">Tabel TER PP 58/2023 — verifikasi dengan konsultan pajak sebelum dipakai produksi.</p>
+          </div>
+        </div>
+      </fieldset>
+
+      <div x-show="ruleTab === 'simulasi'" class="grid gap-4 lg:grid-cols-12">
+        <div class="card p-6 lg:col-span-5">
+          <h2 class="font-semibold">Simulator perhitungan</h2>
+          <p class="text-xs text-ink/50">Coba angka apa saja — tidak disimpan.</p>
+          <div class="mt-4 grid grid-cols-2 gap-4">
+            <label class="col-span-2"><span class="label">Gaji pokok / bulan</span><input type="number" x-model.number="simForm.pokok" class="input"></label>
+            <label><span class="label">Tunjangan tetap</span><input type="number" x-model.number="simForm.tetap" class="input"></label>
+            <label><span class="label">Status PTKP</span><select x-model="simForm.ptkp" class="input"><template x-for="p in ['TK/0','TK/1','TK/2','TK/3','K/0','K/1','K/2','K/3']"><option x-text="p"></option></template></select></label>
+            <label><span class="label">Tunj. makan / hari</span><input type="number" x-model.number="simForm.makan" class="input"></label>
+            <label><span class="label">Hari hadir</span><input type="number" x-model.number="simForm.hari" class="input"></label>
+            <label><span class="label">Lembur hari kerja (jam, 1 hari)</span><input type="number" step="0.5" x-model.number="simForm.jamKerja" class="input"></label>
+            <label><span class="label">Lembur hari libur (jam, 1 hari)</span><input type="number" step="0.5" x-model.number="simForm.jamLibur" class="input"></label>
+            <label class="col-span-2"><span class="label">Pola minggu kerja</span><select x-model.number="simForm.mingguKerja" class="input"><option value="6">6 hari kerja (Freeport / Perusahaan 6-1)</option><option value="5">5 hari kerja (Kantor basic)</option></select></label>
+          </div>
+        </div>
+        <div class="card p-6 lg:col-span-7">
+          <h2 class="font-semibold">Langkah perhitungan</h2>
+          <ol class="mt-4 space-y-3 text-sm">
+            <li class="flex gap-3"><span class="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-navy text-xs text-white">1</span><div class="flex-1"><p>Upah per jam = <span x-text="fmt((Number(simForm.pokok) || 0) + (db.rules.lembur.dasar === 'pokok' ? 0 : Number(simForm.tetap) || 0))"></span> ÷ <span x-text="db.rules.lembur.pembagi"></span></p><p class="font-semibold tabular-nums" x-text="fmt(sim.upahJam) + ' / jam'"></p></div></li>
+            <li class="flex gap-3"><span class="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-navy text-xs text-white">2</span><div class="flex-1"><p>Lembur hari kerja: <span x-text="tierText(sim.k)"></span> = <strong x-text="num(sim.k.ekuivalen) + ' jam ekuivalen'"></strong></p><p>Lembur hari libur: <span x-text="tierText(sim.l)"></span> = <strong x-text="num(sim.l.ekuivalen) + ' jam ekuivalen'"></strong></p><p class="font-semibold tabular-nums" x-text="'Upah lembur = ' + fmt(sim.lembur)"></p></div></li>
+            <li class="flex gap-3"><span class="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-navy text-xs text-white">3</span><div class="flex-1"><p>Pendapatan = pokok + tetap + makan (<span x-text="fmt(sim.makan)"></span>) + lembur</p><p class="font-semibold tabular-nums" x-text="fmt(sim.bruto)"></p></div></li>
+            <li class="flex gap-3"><span class="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-navy text-xs text-white">4</span><div class="flex-1"><p>BPJS pekerja: Kes <span x-text="fmt(sim.kes)"></span> + JHT <span x-text="fmt(sim.jht)"></span> + JP <span x-text="fmt(sim.jp)"></span></p><p class="font-semibold tabular-nums" x-text="fmt(sim.kes + sim.jht + sim.jp)"></p></div></li>
+            <li class="flex gap-3"><span class="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-navy text-xs text-white">5</span><div class="flex-1"><p>PPh 21: (<span x-text="fmt(sim.bruto)"></span> + premi perusahaan <span x-text="fmt(sim.natura)"></span>) × TER <span x-text="sim.ter.kategori"></span> <span x-text="num(sim.ter.tarif, 2) + '%'"></span></p><p class="font-semibold tabular-nums" x-text="fmt(sim.pph) + (db.rules.pph.metode === 'ditanggung' ? ' (ditanggung perusahaan)' : '')"></p></div></li>
+          </ol>
+          <div class="mt-6 flex items-center justify-between bg-ink p-5 text-white"><span class="text-sm text-white/70">Take home pay</span><span class="text-3xl font-light tabular-nums" x-text="fmt(sim.thp)"></span></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================ PENGGUNA -->
+    <section x-show="route === 'pengguna'" class="space-y-6">
+      <div class="flex flex-wrap items-end justify-between gap-4">
+        <div><h1 class="display text-4xl">Pengguna &amp; Hak Akses</h1><p class="mt-2 text-sm text-ink/60">Lima peran pengguna dengan pembagian tugas (segregation of duties) untuk proses payroll.</p></div>
+        <div class="flex gap-2"><button @click="resetData()" class="btn-light text-red-600"><i class="fa-solid fa-database"></i> Reset Data Simulasi</button><button @click="openUser()" class="btn-primary"><i class="fa-solid fa-user-plus text-xs"></i> Tambah Pengguna</button></div>
+      </div>
+      <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+        <template x-for="(r, k) in roles" :key="k"><div class="card p-5"><span class="grid h-10 w-10 place-items-center rounded-md" :class="r.cls"><i class="fa-solid" :class="r.icon"></i></span><p class="mt-3 font-semibold" x-text="r.nama"></p><p class="mt-1 text-xs text-ink/60" x-text="r.desc"></p><p class="mt-3 text-xs text-ink/40" x-text="db.users.filter(u => u.role === k).length + ' akun'"></p></div></template>
+      </div>
+      <div class="card overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead class="border-b border-black/5"><tr><th class="th">Pengguna</th><th class="th">Peran</th><th class="th">Tertaut ke karyawan</th><th class="th">Status</th><th class="th"></th></tr></thead>
+          <tbody class="divide-y divide-black/5">
+            <template x-for="u in db.users" :key="u.id"><tr><td class="td"><span class="font-medium" x-text="u.nama"></span><span class="block text-xs text-ink/50" x-text="u.email"></span></td><td class="td"><span class="badge bg-surface text-ink ring-black/5"><i class="fa-solid" :class="roles[u.role].icon"></i><span x-text="roles[u.role].nama"></span></span></td><td class="td text-ink/60" x-text="u.empId ? empById(u.empId).nama + ' (' + empById(u.empId).nik + ')' : '—'"></td><td class="td"><span class="badge" :class="u.aktif ? 'bg-emerald-50 text-emerald-700 ring-emerald-600/20' : 'bg-slate-100 text-slate-600 ring-slate-500/20'" x-text="u.aktif ? 'Aktif' : 'Nonaktif'"></span></td><td class="td whitespace-nowrap text-right"><button x-show="u.aktif" @click="switchUser(u)" class="btn-light btn-sm" title="Simulasi masuk sebagai pengguna ini"><i class="fa-solid fa-right-to-bracket"></i> Masuk sebagai</button><button @click="openUser(u)" class="btn-icon"><i class="fa-solid fa-pen"></i></button></td></tr></template>
+          </tbody>
+        </table>
+      </div>
+      <div class="card overflow-x-auto">
+        <h2 class="border-b border-black/5 px-5 py-4 font-semibold">Matriks hak akses</h2>
+        <table class="w-full text-sm">
+          <thead class="border-b border-black/5"><tr><th class="th">Menu / tindakan</th><template x-for="(r, k) in roles" :key="k"><th class="th text-center" x-text="r.nama"></th></template></tr></thead>
+          <tbody class="divide-y divide-black/5">
+            <tr class="bg-surface/60"><td class="px-4 py-2 text-[11px] font-semibold uppercase tracking-wider text-ink/40" colspan="6">Menu</td></tr>
+            <template x-for="(r, k) in routes" :key="k"><tr><td class="td"><i class="fa-solid w-5 text-ink/40" :class="r[1]"></i> <span x-text="r[0]"></span></td><template x-for="(ro, rk) in roles" :key="rk"><td class="td text-center"><i class="fa-solid" :class="r[2].includes(rk) ? 'fa-circle-check text-emerald-600' : 'fa-minus text-ink/15'"></i></td></template></tr></template>
+            <tr class="bg-surface/60"><td class="px-4 py-2 text-[11px] font-semibold uppercase tracking-wider text-ink/40" colspan="6">Tindakan</td></tr>
+            <template x-for="(p, k) in perms" :key="k"><tr><td class="td" x-text="p[0]"></td><template x-for="(ro, rk) in roles" :key="rk"><td class="td text-center"><i class="fa-solid" :class="p[1].includes(rk) ? 'fa-circle-check text-emerald-600' : 'fa-minus text-ink/15'"></i></td></template></tr></template>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ============================================================ SKEMA -->
+    <section x-show="route === 'skema'" class="space-y-5">
+      <div><h1 class="display text-4xl">Skema Database</h1><p class="mt-2 max-w-3xl text-sm text-ink/60">Konsep struktur tabel untuk analisa dan penyusunan sistem produksi (MySQL/PostgreSQL). Prototype ini menyimpan data yang sama di browser. Dokumen lengkap: <code>hris/KONSEP-DATABASE.md</code>.</p></div>
+      <div class="card p-5 text-sm">
+        <p class="font-semibold">Alur data utama</p>
+        <div class="mt-3 flex flex-wrap items-center gap-2 text-xs">
+          <template x-for="(s, i) in ['Scanner kartu barcode', 'log_absensi', 'absensi_harian', 'persetujuan_lembur + pengajuan_izin', 'payroll_periode', 'payroll_detail + komponen', 'Slip gaji / laporan']"><span class="inline-flex items-center gap-2"><span class="bg-ink px-3 py-1.5 font-mono text-white" x-text="s"></span><i x-show="i < 6" class="fa-solid fa-arrow-right text-ink/30"></i></span></template>
+        </div>
+      </div>
+      <template x-for="grp in ['Master', 'Absensi', 'Payroll', 'Sistem']">
+        <div>
+          <h2 class="mb-3 text-xs font-semibold uppercase tracking-widest text-ink/40" x-text="grp"></h2>
+          <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            <template x-for="t in schema.filter(t => t[0] === grp)" :key="t[1]">
+              <div class="card overflow-hidden"><div class="bg-ink px-4 py-3 text-white"><p class="font-mono text-sm" x-text="t[1]"></p><p class="text-[11px] text-white/50" x-text="t[2]"></p></div><ul class="divide-y divide-black/5 text-xs"><template x-for="f in t[3]"><li class="flex gap-2 px-4 py-1.5"><span class="font-mono" :class="f.includes(':PK') ? 'font-semibold text-accent' : f.includes(':FK') ? 'text-navy' : ''" x-text="f.split(':')[0]"></span><span class="ml-auto text-right text-ink/50" x-text="f.split(':').slice(1).join(':')"></span></li></template></ul></div>
+            </template>
+          </div>
+        </div>
+      </template>
+    </section>
+
+    <!-- ============================================================ AUDIT -->
+    <section x-show="route === 'audit'" class="space-y-5">
+      <div><h1 class="display text-4xl">Log Aktivitas</h1><p class="mt-2 text-sm text-ink/60">Jejak seluruh perubahan data oleh pengguna dan sistem.</p></div>
+      <div class="card divide-y divide-black/5">
+        <template x-for="(a, i) in db.activity" :key="i"><div class="flex items-start gap-4 px-5 py-3 text-sm"><span class="w-36 shrink-0 text-xs tabular-nums text-ink/50" x-text="fmtTime(a.t)"></span><span class="flex-1" x-text="a.msg"></span><span class="text-right text-xs"><span class="block font-medium" x-text="a.user"></span><span class="text-ink/40" x-text="roleName(a.role)"></span></span></div></template>
+        <p x-show="!db.activity.length" class="p-6 text-sm text-ink/50">Belum ada aktivitas.</p>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<!-- =============================================================== MODAL: FORM KARYAWAN -->
+<template x-if="empModal">
+  <div class="modal-wrap" @keydown.escape.window="empModal = false">
+    <div class="modal max-w-3xl" x-trap.noscroll="empModal" @click.outside="empModal = false">
+      <div class="flex items-center justify-between border-b border-black/5 px-6 py-4"><h2 class="font-semibold" x-text="empForm.id ? 'Ubah data karyawan' : 'Tambah karyawan'"></h2><button @click="empModal = false" class="btn-icon"><i class="fa-solid fa-xmark"></i></button></div>
+      <div class="flex gap-6 overflow-x-auto border-b border-black/5 px-6 pt-4">
+        <template x-for="t in [['pribadi','Data pribadi'],['pekerjaan','Pekerjaan & jadwal'],['gaji','Gaji & rekening'],['fp','Kartu absensi']]"><button @click="empTab = t[0]" class="tab" :class="empTab === t[0] && 'is-active'" x-text="t[1]"></button></template>
+      </div>
+      <form @submit.prevent="saveEmp()" class="p-6">
+        <fieldset :disabled="!can('emp.edit')" x-show="empTab === 'pribadi'" class="grid gap-4 sm:grid-cols-2">
+          <label class="sm:col-span-2"><span class="label">Nama lengkap *</span><input x-model="empForm.nama" class="input" required></label>
+          <label><span class="label">NIK karyawan *</span><input x-model="empForm.nik" class="input"></label>
+          <label><span class="label">Jenis kelamin</span><select x-model="empForm.jk" class="input"><option value="L">Laki-laki</option><option value="P">Perempuan</option></select></label>
+          <label><span class="label">No. KTP</span><input x-model="empForm.ktp" class="input"></label>
+          <label><span class="label">Telepon</span><input x-model="empForm.telp" class="input"></label>
+          <label class="sm:col-span-2"><span class="label">Email</span><input x-model="empForm.email" type="email" class="input"></label>
+        </fieldset>
+        <fieldset :disabled="!can('emp.edit')" x-show="empTab === 'pekerjaan'" class="grid gap-4 sm:grid-cols-2">
+          <label><span class="label">Kategori</span><select x-model="empForm.kategori" class="input"><option>Lapangan</option><option>Kantor</option></select></label>
+          <label><span class="label">Unit kerja</span><select x-model="empForm.unitId" class="input"><template x-for="u in db.units"><option :value="u.id" x-text="u.nama" :selected="u.id === empForm.unitId"></option></template></select></label>
+          <label><span class="label">Jabatan</span><input x-model="empForm.jabatan" class="input"></label>
+          <label><span class="label">Lokasi kerja</span><select x-model="empForm.lokasiId" class="input"><template x-for="l in db.lokasi"><option :value="l.id" x-text="l.nama" :selected="l.id === empForm.lokasiId"></option></template></select></label>
+          <label><span class="label">Skema / jadwal kerja</span><select x-model="empForm.jadwalId" class="input"><template x-for="j in db.jadwal"><option :value="j.id" x-text="j.kode + ' — ' + j.nama" :selected="j.id === empForm.jadwalId"></option></template></select></label>
+          <label x-show="jadwalById(empForm.jadwalId).pola === 'siklus'"><span class="label">Grup roster (hari libur bergulir)</span><select x-model.number="empForm.rosterOffset" class="input"><template x-for="g in [0,1,2,3,4,5,6]"><option :value="g" x-text="'Grup ' + String.fromCharCode(65 + g)" :selected="g === Number(empForm.rosterOffset)"></option></template></select></label>
+          <label><span class="label">Status kerja</span><select x-model="empForm.statusKerja" class="input"><option>PKWTT</option><option>PKWT</option><option>Harian Lepas</option></select></label>
+          <label><span class="label">Tanggal masuk</span><input type="date" x-model="empForm.tglMasuk" class="input"></label>
+          <label><span class="label">Status</span><select x-model="empForm.status" class="input"><option>Aktif</option><option>Nonaktif</option></select></label>
+        </fieldset>
+        <div x-show="empTab === 'gaji'">
+          <p x-show="!can('emp.gaji.view')" class="bg-surface p-4 text-sm text-ink/60"><i class="fa-solid fa-lock"></i> Data gaji hanya dapat dilihat Keuangan, Pimpinan &amp; Admin.</p>
+          <fieldset x-show="can('emp.gaji.view')" :disabled="!can('emp.gaji')" class="grid gap-4 sm:grid-cols-2">
+            <p x-show="!can('emp.gaji')" class="text-xs text-amber-700 sm:col-span-2"><i class="fa-solid fa-lock"></i> Hanya Keuangan / Admin yang dapat mengubah komponen gaji.</p>
+            <label><span class="label">Tipe gaji</span><select x-model="empForm.tipeGaji" class="input"><option>Bulanan</option><option>Harian</option></select></label>
+            <label x-show="empForm.tipeGaji === 'Bulanan'"><span class="label">Gaji pokok / bulan</span><input type="number" x-model="empForm.gaji.pokok" class="input"></label>
+            <label x-show="empForm.tipeGaji === 'Harian'"><span class="label">Upah harian</span><input type="number" x-model="empForm.gaji.upahHarian" class="input"></label>
+            <label><span class="label">Tunjangan jabatan / bulan</span><input type="number" x-model="empForm.gaji.tunjJabatan" class="input"></label>
+            <label><span class="label">Tunjangan lokasi (dari master lokasi)</span><input :value="fmt(lokById(empForm.lokasiId).tunjangan)" disabled class="input"></label>
+            <label><span class="label">Tunjangan makan / hari hadir</span><input type="number" x-model="empForm.gaji.makan" class="input"></label>
+            <label><span class="label">Tunjangan transport / hari hadir</span><input type="number" x-model="empForm.gaji.transport" class="input"></label>
+            <label><span class="label">Status PTKP</span><select x-model="empForm.ptkp" class="input"><template x-for="p in ['TK/0','TK/1','TK/2','TK/3','K/0','K/1','K/2','K/3']"><option x-text="p" :selected="p === empForm.ptkp"></option></template></select></label>
+            <label><span class="label">NPWP</span><input x-model="empForm.npwp" class="input" placeholder="Kosong = pakai NIK KTP"></label>
+            <div class="flex flex-wrap gap-4 sm:col-span-2"><label class="flex items-center gap-2 text-sm"><input type="checkbox" x-model="empForm.bpjs.kes"> BPJS Kesehatan</label><label class="flex items-center gap-2 text-sm"><input type="checkbox" x-model="empForm.bpjs.tk"> BPJS TK (JHT, JKK, JKM)</label><label class="flex items-center gap-2 text-sm"><input type="checkbox" x-model="empForm.bpjs.jp"> Jaminan Pensiun</label></div>
+            <label><span class="label">Bank</span><input x-model="empForm.bank" class="input"></label>
+            <label><span class="label">No. rekening</span><input x-model="empForm.rekening" class="input"></label>
+            <label class="sm:col-span-2"><span class="label">Atas nama rekening</span><input x-model="empForm.atasNama" class="input"></label>
+          </fieldset>
+        </div>
+        <fieldset :disabled="!can('emp.edit')" x-show="empTab === 'fp'" class="grid gap-4 sm:grid-cols-2">
+          <label><span class="label">ID absensi *</span><input x-model="empForm.pin" :disabled="!!empForm.id" class="input font-mono"></label>
+          <div class="text-sm"><span class="label">Kartu ID</span><p><span class="font-mono" x-text="empForm.kartu.no || '(diterbitkan otomatis saat disimpan)'"></span> <span class="badge ml-1" :class="cardCls[empForm.kartu.status]" x-show="empForm.kartu.no" x-text="empForm.kartu.status"></span></p></div>
+          <p class="text-xs text-ink/50 sm:col-span-2">Nomor kartu (isi barcode) dibentuk dari ID absensi + versi kartu. Penggantian & pemblokiran kartu dilakukan di menu Kartu &amp; Scanner Barcode.</p>
+        </fieldset>
+        <div class="mt-6 flex justify-end gap-2 border-t border-black/5 pt-5"><button type="button" @click="empModal = false" class="btn-light">Batal</button><button class="btn-primary"><i class="fa-solid fa-floppy-disk"></i> Simpan</button></div>
+      </form>
+    </div>
+  </div>
+</template>
+
+<!-- =============================================================== DRAWER: DETAIL KARYAWAN -->
+<template x-if="detail">
+  <div class="fixed inset-0 z-[55] flex justify-end bg-ink/50" @click.self="detail = null" @keydown.escape.window="detail = null">
+    <div class="flex h-full w-full max-w-2xl flex-col bg-white shadow-2xl" x-trap.noscroll="detail">
+      <div class="flex items-start gap-4 border-b border-black/5 p-6">
+        <span class="grid h-14 w-14 shrink-0 place-items-center bg-navy text-lg font-semibold text-white" x-text="initials(detail.nama)"></span>
+        <div class="min-w-0 flex-1"><h2 class="text-xl font-semibold" x-text="detail.nama"></h2><p class="text-sm text-ink/60" x-text="detail.nik + ' · ' + detail.jabatan"></p><p class="mt-1 text-xs text-ink/50" x-text="detail.kategori + ' · ' + unitById(detail.unitId).nama + ' · ' + lokById(detail.lokasiId).nama"></p></div>
+        <button @click="detail = null" class="btn-icon"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="flex gap-6 overflow-x-auto border-b border-black/5 px-6 pt-4">
+        <template x-for="t in [['profil','Profil'],['absensi','Kehadiran periode'],['slip','Riwayat gaji']]"><button x-show="t[0] !== 'slip' || can('emp.gaji.view')" @click="detailTab = t[0]" class="tab" :class="detailTab === t[0] && 'is-active'" x-text="t[1]"></button></template>
+      </div>
+      <div class="flex-1 overflow-y-auto p-6">
+        <div x-show="detailTab === 'profil'" class="grid gap-x-6 gap-y-4 text-sm sm:grid-cols-2">
+          <template x-for="f in [['Status', detail.status + ' · ' + detail.statusKerja], ['Tanggal masuk', fmtDate(detail.tglMasuk)], ['Skema kerja', jadwalById(detail.jadwalId).nama], ['Jam kerja', jadwalById(detail.jadwalId).masuk + '–' + jadwalById(detail.jadwalId).pulang + ' (' + jadwalById(detail.jadwalId).jamReguler + ' jam)'], ['ID absensi', detail.pin], ['Kartu ID', (detail.kartu.no || '—') + ' · ' + detail.kartu.status], ['No. KTP', detail.ktp], ['Telepon', detail.telp], ['Email', detail.email], ['Status PTKP', detail.ptkp]]">
+            <div><p class="text-xs text-ink/50" x-text="f[0]"></p><p class="mt-0.5 font-medium" x-text="f[1]"></p></div>
+          </template>
+          <template x-if="can('emp.gaji.view')">
+            <div class="bg-surface p-4 sm:col-span-2">
+              <p class="text-xs font-semibold uppercase tracking-widest text-ink/40">Komponen gaji</p>
+              <dl class="mt-3 grid grid-cols-2 gap-3">
+                <div><dt class="text-xs text-ink/50" x-text="detail.tipeGaji === 'Harian' ? 'Upah harian' : 'Gaji pokok'"></dt><dd class="font-medium tabular-nums" x-text="fmt(detail.tipeGaji === 'Harian' ? detail.gaji.upahHarian : detail.gaji.pokok)"></dd></div>
+                <div><dt class="text-xs text-ink/50">Tunjangan tetap (jabatan + lokasi)</dt><dd class="font-medium tabular-nums" x-text="fmt((detail.gaji.tunjJabatan || 0) + lokById(detail.lokasiId).tunjangan)"></dd></div>
+                <div><dt class="text-xs text-ink/50">Makan + transport / hari</dt><dd class="font-medium tabular-nums" x-text="fmt((detail.gaji.makan || 0) + (detail.gaji.transport || 0))"></dd></div>
+                <div><dt class="text-xs text-ink/50">Upah lembur / jam</dt><dd class="font-medium tabular-nums" x-text="fmt(upahJam(detail))"></dd></div>
+                <div class="col-span-2"><dt class="text-xs text-ink/50">Rekening</dt><dd class="font-medium" x-text="detail.bank + ' · ' + detail.rekening + ' a.n. ' + detail.atasNama"></dd></div>
+              </dl>
+            </div>
+          </template>
+          <div class="flex flex-wrap gap-2 sm:col-span-2">
+            <button x-show="can('emp.edit') || can('emp.gaji')" @click="openEmp(detail)" class="btn-dark"><i class="fa-solid fa-pen"></i> Ubah data</button>
+            <button x-show="can('emp.edit')" @click="toggleEmpStatus(detail)" class="btn-light" x-text="detail.status === 'Aktif' ? 'Nonaktifkan' : 'Aktifkan'"></button>
+          </div>
+        </div>
+        <div x-show="detailTab === 'absensi'" class="space-y-4">
+          <select x-model="period" class="input w-auto"><template x-for="p in periodOptions.filter(p => p <= curPeriod)"><option :value="p" x-text="'Periode ' + pLabel(p)"></option></template></select>
+          <template x-for="s in (detailTab === 'absensi' ? [empSummary(detail, period)] : [])">
+            <div class="space-y-4">
+              <div class="grid grid-cols-3 gap-2 text-center sm:grid-cols-6"><template x-for="k in [['Jadwal', s.jadwal], ['Hadir', s.hadir], ['Terlambat', s.terlambat], ['Alpa', s.alpa], ['I/S/C', s.izin + s.sakit + s.cuti], ['Lembur', num(s.lembur.reduce((a, r) => a + r.ot, 0)) + 'j']]"><div class="bg-surface p-2"><p class="text-[10px] text-ink/50" x-text="k[0]"></p><p class="font-semibold tabular-nums" x-text="k[1]"></p></div></template></div>
+              <a :href="runOf(period) ? printUrl('absensi', runOf(period), detail.id) : '#'" target="_blank" x-show="runOf(period)" class="btn-light btn-sm"><i class="fa-solid fa-print"></i> Cetak kartu absensi</a>
+              <table class="w-full text-sm"><tbody class="divide-y divide-black/5"><template x-for="d in [...s.days].reverse()" :key="d.ds"><tr :class="!d.sched && 'text-ink/50'"><td class="py-2 pr-3 whitespace-nowrap" x-text="fmtDay(d.ds)"></td><td class="py-2 pr-3 font-mono text-xs" x-text="(d.masuk || '—') + ' – ' + (d.pulang || '—')"></td><td class="py-2 pr-3 text-xs" x-text="d.ot ? num(d.ot) + ' j lembur' : ''"></td><td class="py-2 text-right"><span class="badge" :class="stCls(d.status)" x-text="d.status"></span></td></tr></template></tbody></table>
+            </div>
+          </template>
+        </div>
+        <div x-show="detailTab === 'slip'" class="space-y-2">
+          <template x-for="x in empSlips(detail)" :key="x.run.id"><div class="flex items-center gap-3 bg-surface p-3 text-sm"><span class="flex-1 font-medium" x-text="pLabel(x.run.period)"></span><span class="badge" :class="runSt(x.run.status).cls" x-text="x.run.status"></span><span class="w-32 text-right font-semibold tabular-nums" x-text="fmt(x.line.thp)"></span><a :href="printUrl('slip', x.run, detail.id)" target="_blank" class="btn-icon"><i class="fa-solid fa-print"></i></a></div></template>
+          <p x-show="!empSlips(detail).length" class="text-sm text-ink/50">Belum ada riwayat payroll.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<!-- =============================================================== MODAL: DETAIL HARI -->
+<template x-for="dm in (dayModal && dayInfo ? [{ ...dayModal, info: dayInfo }] : [])">
+  <div class="modal-wrap" @keydown.escape.window="dayModal = null">
+    <div class="modal max-w-xl" @click.outside="dayModal = null">
+      <div class="flex items-start justify-between border-b border-black/5 px-6 py-4"><div><h2 class="font-semibold" x-text="dm.emp.nama"></h2><p class="text-xs text-ink/50" x-text="fmtDay(dm.ds) + ' · ' + dm.info.j.kode + ' (' + dm.info.j.masuk + '–' + dm.info.j.pulang + ')'"></p></div><button @click="dayModal = null" class="btn-icon"><i class="fa-solid fa-xmark"></i></button></div>
+      <div class="space-y-5 p-6">
+        <div class="grid grid-cols-2 gap-3 text-sm sm:grid-cols-4">
+          <div><p class="text-xs text-ink/50">Status</p><span class="badge mt-1" :class="stCls(dm.info.r.status)" x-text="dm.info.r.status"></span></div>
+          <div><p class="text-xs text-ink/50">Masuk – pulang</p><p class="font-mono font-medium" x-text="(dm.info.r.masuk || '—') + ' – ' + (dm.info.r.pulang || '—')"></p></div>
+          <div><p class="text-xs text-ink/50">Terlambat</p><p class="font-medium" x-text="dm.info.r.late ? dm.info.r.late + ' menit' : '—'"></p></div>
+          <div><p class="text-xs text-ink/50">Lembur</p><p class="font-medium" x-text="dm.info.r.ot ? num(dm.info.r.ot) + ' j · ' + dm.info.r.otStatus : '—'"></p></div>
+        </div>
+        <div>
+          <p class="mb-2 text-xs font-semibold uppercase tracking-widest text-ink/40">Log scan</p>
+          <ul class="divide-y divide-black/5 ring-1 ring-black/5">
+            <template x-for="s in dm.info.scans" :key="s.id"><li class="flex items-center gap-3 px-3 py-2 text-sm"><i class="fa-solid text-navy" :class="s.verify === 'Manual' ? 'fa-pen' : 'fa-barcode'"></i><span class="font-mono font-medium" x-text="s.t.slice(11)"></span><span class="flex-1 text-xs text-ink/50" x-text="devById(s.dev).nama + ' · ' + s.src + (s.oleh ? ' oleh ' + s.oleh : '')"></span><button x-show="can('absen.edit') && s.src === 'Manual'" @click="removeScan(s)" class="btn-icon"><i class="fa-solid fa-trash-can text-xs"></i></button></li></template>
+            <li x-show="!dm.info.scans.length" class="px-3 py-3 text-sm text-ink/50">Tidak ada scan.</li>
+          </ul>
+        </div>
+        <template x-if="can('absen.edit')">
+          <div class="space-y-3 bg-surface p-4">
+            <p class="text-xs font-semibold uppercase tracking-widest text-ink/40">Koreksi operator</p>
+            <form @submit.prevent="addManualScan()" class="flex gap-2"><input type="time" x-model="manualTime" class="input w-auto"><button class="btn-dark"><i class="fa-solid fa-plus"></i> Tambah scan manual</button></form>
+            <div x-show="!dm.info.leave && dm.info.r.sched" class="flex flex-wrap gap-2"><span class="self-center text-xs text-ink/50">Tandai sebagai:</span><template x-for="j in ['Izin','Sakit','Cuti','Dinas']"><button @click="setDayLeave(j)" class="btn-light btn-sm" x-text="j"></button></template></div>
+            <p x-show="dm.info.leave" class="text-xs text-ink/60" x-text="'Tercatat ' + dm.info.leave?.jenis + ' (' + dm.info.leave?.status + '): ' + dm.info.leave?.ket"></p>
+            <a x-show="dm.info.r.ot" href="#lembur" @click="dayModal = null; otStatus = ''" class="block text-xs font-medium text-navy hover:underline">Kelola persetujuan lembur →</a>
+          </div>
+        </template>
+      </div>
+    </div>
+  </div>
+</template>
+
+<!-- =============================================================== MODAL: IZIN -->
+<template x-if="leaveModal">
+  <div class="modal-wrap" @keydown.escape.window="leaveModal = false">
+    <form class="modal max-w-lg p-6" @submit.prevent="saveLeave()" @click.outside="leaveModal = false">
+      <h2 class="font-semibold" x-text="session.role === 'karyawan' ? 'Ajukan izin / sakit / cuti' : 'Catat izin / sakit / cuti'"></h2>
+      <div class="mt-5 grid gap-4 sm:grid-cols-2">
+        <label class="sm:col-span-2" x-show="session.role !== 'karyawan'"><span class="label">Karyawan</span><select x-model="leaveForm.empId" class="input"><template x-for="e in activeEmps"><option :value="e.id" x-text="e.nama + ' — ' + e.nik" :selected="e.id === leaveForm.empId"></option></template></select></label>
+        <label class="sm:col-span-2"><span class="label">Jenis</span><select x-model="leaveForm.jenis" class="input"><option>Izin</option><option>Sakit</option><option>Cuti</option><option>Dinas</option></select></label>
+        <label><span class="label">Dari</span><input type="date" x-model="leaveForm.dari" class="input"></label>
+        <label><span class="label">Sampai</span><input type="date" x-model="leaveForm.sampai" class="input"></label>
+        <label class="sm:col-span-2"><span class="label">Keterangan</span><textarea x-model="leaveForm.ket" rows="3" class="input"></textarea></label>
+      </div>
+      <div class="mt-6 flex justify-end gap-2"><button type="button" @click="leaveModal = false" class="btn-light">Batal</button><button class="btn-primary" x-text="session.role === 'karyawan' || !can('leave.approve') ? 'Kirim pengajuan' : 'Simpan (disetujui)'"></button></div>
+    </form>
+  </div>
+</template>
+
+<!-- =============================================================== MODAL: JADWAL -->
+<template x-if="jadwalModal">
+  <div class="modal-wrap" @keydown.escape.window="jadwalModal = false">
+    <form class="modal max-w-2xl p-6" @submit.prevent="saveJadwal()" @click.outside="jadwalModal = false">
+      <h2 class="font-semibold" x-text="jadwalForm.id ? 'Ubah skema kerja' : 'Skema kerja baru'"></h2>
+      <div class="mt-5 grid gap-4 sm:grid-cols-3">
+        <label><span class="label">Kode</span><input x-model="jadwalForm.kode" class="input font-mono"></label>
+        <label class="sm:col-span-2"><span class="label">Nama</span><input x-model="jadwalForm.nama" class="input"></label>
+        <label><span class="label">Pola</span><select x-model="jadwalForm.pola" class="input"><option value="mingguan">Mingguan (hari tetap)</option><option value="siklus">Siklus / roster bergulir</option></select></label>
+        <div class="sm:col-span-2" x-show="jadwalForm.pola === 'mingguan'"><span class="label">Hari kerja</span><div class="flex flex-wrap gap-1"><template x-for="(h, i) in ['Min','Sen','Sel','Rab','Kam','Jum','Sab']"><button type="button" @click="toggleHari(jadwalForm, i)" class="seg ring-1 ring-black/10" :class="jadwalForm.hari.includes(i) ? 'bg-navy text-white' : 'bg-white'" x-text="h"></button></template></div></div>
+        <div class="grid grid-cols-3 gap-2 sm:col-span-2" x-show="jadwalForm.pola === 'siklus'"><label><span class="label">Hari kerja</span><input type="number" x-model="jadwalForm.siklusKerja" class="input"></label><label><span class="label">Hari libur</span><input type="number" x-model="jadwalForm.siklusLibur" class="input"></label><label><span class="label">Tgl acuan</span><input type="date" x-model="jadwalForm.anchor" class="input"></label></div>
+        <label><span class="label">Jam masuk</span><input type="time" x-model="jadwalForm.masuk" class="input"></label>
+        <label><span class="label">Jam pulang</span><input type="time" x-model="jadwalForm.pulang" class="input"></label>
+        <label><span class="label">Istirahat (menit)</span><input type="number" x-model="jadwalForm.istirahat" class="input"></label>
+        <label><span class="label">Hari kerja / minggu (pengali libur)</span><select x-model.number="jadwalForm.mingguKerja" class="input"><option :value="6" :selected="jadwalForm.mingguKerja == 6">6 hari</option><option :value="5" :selected="jadwalForm.mingguKerja == 5">5 hari</option></select></label>
+        <label><span class="label">Pembagi upah harian</span><input type="number" x-model="jadwalForm.hariKerjaBulan" class="input"></label>
+        <div class="text-sm"><span class="label">Jam reguler (otomatis)</span><p class="py-2.5 font-semibold" x-text="num(jadwalJam(jadwalForm)) + ' jam/hari'"></p></div>
+        <label class="sm:col-span-3"><span class="label">Keterangan</span><input x-model="jadwalForm.keterangan" class="input"></label>
+      </div>
+      <div class="mt-6 flex justify-end gap-2"><button type="button" @click="jadwalModal = false" class="btn-light">Batal</button><button class="btn-primary">Simpan</button></div>
+    </form>
+  </div>
+</template>
+
+<!-- =============================================================== MODAL: PENGGUNA -->
+<template x-if="userModal">
+  <div class="modal-wrap" @keydown.escape.window="userModal = false">
+    <form class="modal max-w-lg p-6" @submit.prevent="saveUser()" @click.outside="userModal = false">
+      <h2 class="font-semibold" x-text="userForm.id ? 'Ubah pengguna' : 'Pengguna baru'"></h2>
+      <div class="mt-5 grid gap-4">
+        <label><span class="label">Nama</span><input x-model="userForm.nama" class="input"></label>
+        <label><span class="label">Email (login)</span><input type="email" x-model="userForm.email" class="input"></label>
+        <label><span class="label">Peran</span><select x-model="userForm.role" class="input"><template x-for="(r, k) in roles" :key="k"><option :value="k" x-text="r.nama" :selected="k === userForm.role"></option></template></select></label>
+        <label><span class="label">Tautkan ke data karyawan <span x-show="userForm.role === 'karyawan'">*</span></span><select x-model="userForm.empId" class="input"><option value="">— tidak ditautkan —</option><template x-for="e in db.employees"><option :value="e.id" x-text="e.nama + ' (' + e.nik + ')'" :selected="e.id === userForm.empId"></option></template></select></label>
+        <label><span class="label">Kata sandi (simulasi)</span><input x-model="userForm.password" class="input font-mono"></label>
+        <label class="flex items-center gap-2 text-sm"><input type="checkbox" x-model="userForm.aktif"> Akun aktif</label>
+      </div>
+      <div class="mt-6 flex justify-end gap-2"><button type="button" @click="userModal = false" class="btn-light">Batal</button><button class="btn-primary">Simpan</button></div>
+    </form>
+  </div>
+</template>
+
+<!-- =============================================================== MODAL: IMPORT LOG SCANNER -->
+<template x-if="importModal">
+  <div class="modal-wrap" @keydown.escape.window="importModal = false">
+    <div class="modal max-w-3xl p-6" @click.outside="importModal = false">
+      <h2 class="font-semibold">Import log dari scanner offline</h2>
+      <p class="text-sm text-ink/60">Untuk lokasi tanpa jaringan (mis. portal underground): scanner genggam menyimpan hasil scan, lalu file diekspor (CSV/TXT) dan diunggah di sini. Format per baris: <code class="font-mono">NO_KARTU;YYYY-MM-DD HH:MM:SS</code></p>
+      <div class="mt-4 flex flex-wrap items-center gap-2">
+        <select x-model="importDev" class="input w-auto"><template x-for="d in db.devices"><option :value="d.id" x-text="d.id + ' — ' + d.nama" :selected="d.id === importDev"></option></template></select>
+        <label class="btn-light cursor-pointer"><i class="fa-solid fa-upload"></i> Pilih file<input type="file" accept=".csv,.txt" @change="importFile($event)" class="hidden"></label>
+        <button @click="sampleAttlog()" class="btn-light"><i class="fa-solid fa-wand-magic-sparkles"></i> Isi contoh</button>
+      </div>
+      <textarea x-model="importText" rows="6" class="input mt-3 font-mono text-xs" placeholder="YBM101001;2026-11-05 05:42:12"></textarea>
+      <div x-show="importPreview.length" class="mt-3 max-h-52 overflow-y-auto ring-1 ring-black/5">
+        <table class="w-full text-xs"><tbody class="divide-y divide-black/5"><template x-for="(x, i) in importPreview" :key="i"><tr><td class="px-3 py-1.5 font-mono" x-text="x.raw"></td><td class="px-3 py-1.5" x-text="x.emp ? x.emp.nama : ''"></td><td class="px-3 py-1.5 text-right"><span class="badge" :class="!x.ok || !x.emp ? 'bg-red-50 text-red-700 ring-red-600/20' : x.dup ? 'bg-slate-100 text-slate-600 ring-slate-500/20' : 'bg-emerald-50 text-emerald-700 ring-emerald-600/20'" x-text="!x.ok ? 'Format salah' : !x.emp ? (x.alasan || 'Tidak dikenal') : x.dup ? 'Duplikat' : 'Siap diimpor'"></span></td></tr></template></tbody></table>
+      </div>
+      <div class="mt-6 flex justify-end gap-2"><button @click="importModal = false" class="btn-light">Batal</button><button @click="doImport()" class="btn-primary"><i class="fa-solid fa-file-import"></i> Import <span x-text="importPreview.filter(x => x.ok && x.emp && !x.dup).length"></span> log</button></div>
+    </div>
+  </div>
+</template>
+
+<!-- =============================================================== MODAL: PENYESUAIAN -->
+<template x-if="adjModal">
+  <div class="modal-wrap" @keydown.escape.window="adjModal = false">
+    <form class="modal max-w-lg p-6" @submit.prevent="saveAdj()" @click.outside="adjModal = false">
+      <h2 class="font-semibold">Penyesuaian gaji — <span x-text="pLabel(adjForm.period)"></span></h2>
+      <div class="mt-5 grid gap-4">
+        <label><span class="label">Karyawan</span><select x-model="adjForm.empId" class="input"><template x-for="l in runOf(adjForm.period).lines"><option :value="l.empId" x-text="l.nama" :selected="l.empId === adjForm.empId"></option></template></select></label>
+        <div class="grid grid-cols-2 gap-1 rounded-md bg-surface p-1"><template x-for="j in ['Pendapatan','Potongan']"><button type="button" @click="adjForm.jenis = j" class="seg" :class="adjForm.jenis === j ? 'bg-white shadow-sm' : 'text-ink/60'" x-text="j === 'Pendapatan' ? '+ Pendapatan' : '− Potongan'"></button></template></div>
+        <label><span class="label">Nama komponen</span><input x-model="adjForm.nama" list="adj-names" class="input" placeholder="mis. Insentif kinerja, Kasbon"><datalist id="adj-names"><option>Insentif Kinerja</option><option>Bonus Safety Award</option><option>Rapel Kenaikan Gaji</option><option>Cicilan Kasbon</option><option>Potongan Koperasi</option><option>Potongan Kerusakan Alat</option></datalist></label>
+        <label><span class="label">Nilai (Rp)</span><input type="number" x-model="adjForm.nilai" class="input"></label>
+      </div>
+      <div class="mt-6 flex justify-end gap-2"><button type="button" @click="adjModal = false" class="btn-light">Batal</button><button class="btn-primary">Simpan &amp; hitung ulang</button></div>
+    </form>
+  </div>
+</template>
+
+<!-- =============================================================== MODAL: CATATAN STATUS PAYROLL -->
+<template x-for="nm in (noteModal ? [noteModal] : [])">
+  <div class="modal-wrap" @keydown.escape.window="noteModal = null">
+    <form class="modal max-w-lg p-6" @submit.prevent="submitNote()" @click.outside="noteModal = null">
+      <h2 class="font-semibold" x-text="{ Diajukan: 'Ajukan payroll ke Pimpinan', Disetujui: 'Setujui payroll', Ditolak: 'Kembalikan payroll ke Keuangan', Dibayar: 'Tandai payroll sudah dibayar' }[nm.status]"></h2>
+      <div class="mt-4 grid grid-cols-2 gap-3 bg-surface p-4 text-sm"><div><p class="text-xs text-ink/50">Periode</p><p class="font-medium" x-text="pLabel(nm.run.period)"></p></div><div><p class="text-xs text-ink/50">Karyawan</p><p class="font-medium" x-text="nm.run.totals.karyawan"></p></div><div><p class="text-xs text-ink/50">Take home pay</p><p class="font-medium tabular-nums" x-text="fmt(nm.run.totals.thp)"></p></div><div><p class="text-xs text-ink/50">Biaya perusahaan</p><p class="font-medium tabular-nums" x-text="fmt(nm.run.totals.biaya)"></p></div></div>
+      <label class="mt-4 block"><span class="label" x-text="nm.status === 'Ditolak' ? 'Alasan (wajib)' : 'Catatan'"></span><textarea x-model="nm.text" rows="3" class="input"></textarea></label>
+      <p x-show="nm.status === 'Disetujui'" class="mt-3 text-xs text-ink/50"><i class="fa-solid fa-stamp"></i> Persetujuan tercatat di lembar pengesahan dengan nama &amp; waktu Anda.</p>
+      <div class="mt-6 flex justify-end gap-2"><button type="button" @click="noteModal = null" class="btn-light">Batal</button><button :class="nm.status === 'Ditolak' ? 'btn-danger' : nm.status === 'Diajukan' ? 'btn-primary' : 'btn-ok'" x-text="{ Diajukan: 'Ajukan', Disetujui: 'Setujui', Ditolak: 'Kembalikan', Dibayar: 'Tandai dibayar' }[nm.status]"></button></div>
+    </form>
+  </div>
+</template>
+
+<!-- =============================================================== MODAL: RINCIAN SLIP -->
+<template x-for="ld in (lineDetail ? [lineDetail] : [])">
+  <div class="modal-wrap" @keydown.escape.window="lineDetail = null">
+    <div class="modal max-w-2xl" @click.outside="lineDetail = null">
+      <div class="flex items-start justify-between border-b border-black/5 px-6 py-4"><div><h2 class="font-semibold" x-text="ld.nama"></h2><p class="text-xs text-ink/50" x-text="ld.nik + ' · ' + ld.jabatan + ' · ' + ld.jadwal"></p></div><button @click="lineDetail = null" class="btn-icon"><i class="fa-solid fa-xmark"></i></button></div>
+      <div class="max-h-[70vh] space-y-5 overflow-y-auto p-6 text-sm">
+        <div x-show="ld.peringatan.length" class="bg-amber-50 p-3 text-amber-900"><template x-for="w in ld.peringatan"><p><i class="fa-solid fa-triangle-exclamation"></i> <span x-text="w"></span></p></template></div>
+        <div class="grid gap-5 sm:grid-cols-2">
+          <div><p class="mb-2 text-xs font-semibold uppercase tracking-widest text-emerald-700">Pendapatan</p><template x-for="p in ld.pendapatan"><div class="flex justify-between gap-3 py-1"><span><span x-text="p.nama"></span><span class="block text-[11px] text-ink/50" x-text="p.ket"></span></span><span class="tabular-nums" x-text="fmt(p.nilai)"></span></div></template><div class="mt-2 flex justify-between border-t border-black/10 pt-2 font-semibold"><span>Total</span><span class="tabular-nums" x-text="fmt(ld.totalPendapatan)"></span></div></div>
+          <div><p class="mb-2 text-xs font-semibold uppercase tracking-widest text-red-700">Potongan</p><template x-for="p in ld.potongan"><div class="flex justify-between gap-3 py-1"><span><span x-text="p.nama"></span><span class="block text-[11px] text-ink/50" x-text="p.ket"></span></span><span class="tabular-nums" x-text="fmt(p.nilai)"></span></div></template><div class="mt-2 flex justify-between border-t border-black/10 pt-2 font-semibold"><span>Total</span><span class="tabular-nums" x-text="fmt(ld.totalPotongan)"></span></div></div>
+        </div>
+        <div class="flex items-center justify-between bg-ink p-4 text-white"><span>Take home pay</span><span class="text-2xl font-light tabular-nums" x-text="fmt(ld.thp)"></span></div>
+        <div x-show="ld.lembur.length"><p class="mb-2 text-xs font-semibold uppercase tracking-widest text-ink/40">Rincian lembur (upah/jam <span x-text="fmt(ld.upahJam)"></span>)</p>
+          <table class="w-full text-xs"><thead><tr class="text-left text-ink/50"><th class="py-1">Tanggal</th><th>Jenis</th><th>Jam</th><th>Pengali</th><th class="text-right">Ekuivalen</th><th class="text-right">Nilai</th></tr></thead><tbody class="divide-y divide-black/5"><template x-for="o in ld.lembur"><tr><td class="py-1.5" x-text="fmtDay(o.ds)"></td><td x-text="o.jenis"></td><td x-text="num(o.jam)"></td><td x-text="o.rincian.map(x => num(x.jam) + '×' + num(x.kali)).join(' + ')"></td><td class="text-right" x-text="num(o.ekuivalen)"></td><td class="text-right tabular-nums" x-text="fmt(o.nilai)"></td></tr></template></tbody></table>
+        </div>
+        <div><p class="mb-2 text-xs font-semibold uppercase tracking-widest text-ink/40">Beban perusahaan (tidak memotong gaji)</p><template x-for="p in ld.perusahaan"><div class="flex justify-between py-1"><span x-text="p.nama + ' ' + p.ket"></span><span class="tabular-nums" x-text="fmt(p.nilai)"></span></div></template></div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<!-- =============================================================== KONFIRMASI & TOAST -->
+<template x-if="confirmBox.show">
+  <div class="modal-wrap z-[70] items-center" @keydown.escape.window="confirmBox.show = false">
+    <div class="modal max-w-md p-6" @click.outside="confirmBox.show = false">
+      <p class="font-semibold">Konfirmasi</p><p class="mt-2 text-sm text-ink/70" x-text="confirmBox.text"></p>
+      <div class="mt-6 flex justify-end gap-2"><button @click="confirmBox.show = false" class="btn-light">Batal</button><button @click="confirmYes()" class="btn-dark">Ya, lanjutkan</button></div>
+    </div>
+  </div>
+</template>
+<div class="pointer-events-none fixed bottom-4 right-4 z-[80] flex w-full max-w-sm flex-col gap-2" aria-live="polite">
+  <template x-for="t in toasts" :key="t.id">
+    <div x-transition class="pointer-events-auto flex items-start gap-3 bg-ink px-4 py-3 text-sm text-white shadow-xl" :class="t.type === 'error' && 'bg-red-600'">
+      <i class="fa-solid mt-0.5" :class="t.type === 'error' ? 'fa-circle-exclamation' : t.type === 'scan' ? 'fa-barcode text-sky' : t.type === 'info' ? 'fa-circle-info text-sky' : 'fa-circle-check text-emerald-400'"></i><span x-text="t.text"></span>
+    </div>
+  </template>
+</div>
+
+</div>
+</template>
+</body>
+</html>

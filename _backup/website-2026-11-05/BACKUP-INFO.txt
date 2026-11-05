@@ -1,0 +1,8 @@
+BACKUP WEBSITE PT. YAWIRAYA BINA MANDIRI
+Tanggal backup : 5 November 2026
+Commit sumber  : f493052 (update proposal)
+Isi            : seluruh halaman website (*.html), assets/, admin/ (panel admin & simulasi database), README.md
+Tidak termasuk : dokumen penawaran (.docx/.pdf), _profile/, .git
+
+Backup dibuat sebelum pengembangan prototype Sistem Payroll, Absensi Fingerprint & Database Karyawan (folder hris/).
+Untuk mengembalikan: salin isi folder ini ke root project.

@@ -1,0 +1,1312 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Panel Admin — PT. Yawiraya Bina Mandiri</title>
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="icon" type="image/png" href="../assets/img/logo-ybm.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+  <script src="https://cdn.tailwindcss.com/3.4.5"></script>
+  <script src="../assets/js/tailwind.config.js"></script>
+  <link rel="stylesheet" href="../assets/css/style.css">
+  <style type="text/tailwindcss">
+    @layer components {
+      .card { @apply bg-white ring-1 ring-black/5; }
+      .input { @apply w-full rounded-md border-0 bg-white px-3 py-2.5 text-sm ring-1 ring-black/10 placeholder:text-ink/40 focus:ring-2 focus:ring-navy; }
+      .label { @apply mb-1.5 block text-xs font-medium text-ink/60; }
+      .btn { @apply inline-flex items-center justify-center gap-2 rounded-md px-4 py-2.5 text-sm font-medium transition disabled:opacity-50; }
+      .btn-primary { @apply btn bg-navy text-white hover:bg-sky; }
+      .btn-dark { @apply btn bg-ink text-white hover:bg-navy; }
+      .btn-light { @apply btn bg-white text-ink ring-1 ring-black/10 hover:bg-surface; }
+      .btn-danger { @apply btn bg-red-600 text-white hover:bg-red-700; }
+      .btn-icon { @apply inline-grid h-8 w-8 place-items-center rounded-md text-ink/50 transition hover:bg-surface hover:text-ink; }
+      .badge { @apply inline-flex items-center gap-1.5 whitespace-nowrap px-2 py-0.5 text-xs font-medium ring-1 ring-inset; }
+      .th { @apply whitespace-nowrap px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-ink/40; }
+      .td { @apply px-4 py-3 align-middle; }
+      .side-link { @apply flex items-center gap-3 rounded-md px-3 py-2 text-sm text-white/60 transition hover:bg-white/5 hover:text-white; }
+      .side-link.is-active { @apply bg-white/10 text-white; }
+      .tab { @apply whitespace-nowrap border-b-2 border-transparent px-1 pb-3 text-sm text-ink/50 transition hover:text-ink; }
+      .tab.is-active { @apply border-navy font-medium text-navy; }
+      .seg { @apply rounded-md px-3 py-1.5 text-xs font-medium transition; }
+    }
+  </style>
+  <script defer src="https://cdn.jsdelivr.net/npm/@alpinejs/collapse@3.14.1/dist/cdn.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/@alpinejs/focus@3.14.1/dist/cdn.min.js"></script>
+  <script defer src="assets/admin.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.1/dist/cdn.min.js"></script>
+</head>
+<body class="bg-surface font-sans text-ink antialiased" x-data="admin" x-cloak>
+<template x-if="db">
+<div>
+
+<!-- =============================================================== SIDEBAR -->
+<div x-show="sidebar" x-transition.opacity @click="sidebar = false" class="fixed inset-0 z-40 bg-ink/50 lg:hidden"></div>
+<aside id="admin-sidebar" :class="sidebar ? 'translate-x-0' : (collapsed ? '-translate-x-full' : '-translate-x-full lg:translate-x-0')" class="fixed inset-y-0 left-0 z-50 flex w-64 flex-col bg-ink text-white transition-transform duration-300" aria-label="Sidebar"
+  :inert="!sidebarVisible" x-trap.noscroll="sidebar && !isDesktop" @keydown.escape.window="sidebar = false">
+  <div class="flex h-16 shrink-0 items-center border-b border-white/10 pr-2">
+  <a href="#dashboard" @click="sidebar = false" class="flex h-full min-w-0 flex-1 items-center gap-3 px-5 outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-sky">
+    <span class="bg-white p-1"><img src="../assets/img/logo-ybm.png" alt="Logo YBM" class="h-7 w-auto"></span>
+    <span class="leading-tight"><span class="block text-sm font-semibold">YBM Admin</span><span class="block truncate text-[11px] text-white/40">Panel &amp; Sistem Database</span></span>
+  </a>
+  <button type="button" @click="sidebar = false" class="grid h-9 w-9 place-items-center rounded-md text-white/60 hover:bg-white/10 hover:text-white lg:hidden" aria-label="Tutup menu"><i class="fa-solid fa-xmark"></i></button>
+  </div>
+  <nav class="flex-1 space-y-6 overflow-y-auto px-3 py-5" aria-label="Menu admin">
+    <template x-for="grp in [
+      ['Utama', ['dashboard']],
+      ['SDM &amp; Operasional', ['kinerja', 'karyawan', 'unit', 'laporan', 'dokumen', 'kontak']],
+      ['Konten Website', ['konten-beranda', 'konten-layanan', 'konten-galeri', 'konten-kontak']],
+      ['Sistem', ['pengaturan']],
+    ]">
+      <div>
+        <p class="px-3 pb-2 text-[10px] font-semibold uppercase tracking-widest text-white/30" x-html="grp[0]"></p>
+        <template x-for="r in grp[1]">
+          <a :href="'#' + r" @click="sidebar = false" class="side-link" :class="route === r && 'is-active'" :aria-current="route === r ? 'page' : null">
+            <i class="fa-solid w-4 text-center" :class="routes[r][1]"></i>
+            <span class="flex-1" x-text="routes[r][0].replace('Konten: ', '')"></span>
+            <span x-show="r === 'laporan' && stats.draft" class="bg-amber-500 px-1.5 text-[10px] font-semibold text-white" :title="stats.draft + ' laporan belum diisi'" x-text="stats.draft"></span>
+            <span x-show="r === 'dokumen' && docSummary[1].n + docSummary[2].n" class="bg-amber-500 px-1.5 text-[10px] font-semibold text-white" x-text="docSummary[1].n + docSummary[2].n"></span>
+          </a>
+        </template>
+      </div>
+    </template>
+  </nav>
+  <div class="space-y-3 border-t border-white/10 p-4">
+    <a href="../index.html" target="_blank" rel="noopener" class="side-link"><i class="fa-solid fa-arrow-up-right-from-square w-4 text-center"></i> Lihat Website</a>
+    <a href="https://nokensoft.com" target="_blank" rel="noopener noreferrer" class="group flex items-center gap-2 px-3 text-[11px] text-white/40 hover:text-white">Powered by <img src="../assets/img/nokensoft.png" alt="Logo Nokensoft" class="h-4 w-auto transition group-hover:scale-110"> <span class="font-medium text-white/60 group-hover:text-sky">Nokensoft.com</span></a>
+  </div>
+</aside>
+
+<!-- =============================================================== MAIN -->
+<div class="transition-[padding] duration-300" :class="collapsed ? 'lg:pl-0' : 'lg:pl-64'">
+  <header class="sticky top-0 z-30 flex h-16 items-center gap-3 border-b border-black/5 bg-white/90 px-4 backdrop-blur sm:px-6">
+    <button @click="toggleSidebar()" class="btn-icon" aria-controls="admin-sidebar" :aria-expanded="sidebarVisible" :aria-label="sidebarVisible ? 'Sembunyikan menu' : 'Tampilkan menu'" :title="sidebarVisible ? 'Sembunyikan menu' : 'Tampilkan menu'"><i class="fa-solid fa-bars lg:hidden"></i><i class="fa-solid hidden lg:inline" :class="collapsed ? 'fa-indent' : 'fa-outdent'"></i></button>
+    <div class="min-w-0 flex-1">
+      <p class="truncate text-sm font-semibold" x-text="pageTitle"></p>
+      <p class="hidden text-xs text-ink/40 sm:block"><span x-text="dateLong"></span> · <span class="tabular-nums" x-text="clock"></span></p>
+    </div>
+    <div class="relative hidden md:block" @click.outside="globalQ = ''">
+      <i class="fa-solid fa-magnifying-glass pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-xs text-ink/40"></i>
+      <input x-model="globalQ" type="search" placeholder="Cari karyawan…" class="input w-64 bg-surface py-2 pl-9 ring-0" aria-label="Cari karyawan">
+      <div x-show="globalQ.length > 1" x-transition class="card absolute right-0 top-full mt-2 w-80 shadow-xl">
+        <template x-for="e in globalResults" :key="e.id">
+          <button @click="openDetail(e); globalQ = ''" class="flex w-full items-center gap-3 px-4 py-2.5 text-left hover:bg-surface">
+            <div class="grid h-8 w-8 shrink-0 place-items-center overflow-hidden bg-navy text-[10px] font-semibold text-white"><img x-show="e.foto" :src="e.foto" class="h-full w-full object-cover" alt=""><span x-show="!e.foto" x-text="initials(e.nama)"></span></div>
+            <span class="min-w-0"><span class="block truncate text-sm font-medium" x-text="e.nama"></span><span class="block truncate text-xs text-ink/50" x-text="e.nik + ' · ' + e.jabatan"></span></span>
+          </button>
+        </template>
+        <p x-show="!globalResults.length" class="px-4 py-3 text-sm text-ink/50">Tidak ditemukan.</p>
+      </div>
+    </div>
+    <span class="hidden items-center gap-1.5 bg-amber-50 px-2 py-1 text-[11px] font-medium text-amber-800 ring-1 ring-inset ring-amber-600/20 sm:inline-flex"><i class="fa-solid fa-flask"></i> Simulasi</span>
+    <div class="relative" @click.outside="userMenu = false">
+      <button @click="userMenu = !userMenu" class="flex items-center gap-2 rounded-md p-1 hover:bg-surface" :aria-expanded="userMenu" aria-label="Menu pengguna">
+        <span class="grid h-8 w-8 place-items-center bg-ink text-xs font-semibold text-white">AD</span>
+        <span class="hidden text-left text-xs leading-tight sm:block"><span class="block font-medium" x-text="session.nama"></span><span class="block text-ink/40" x-text="session.role"></span></span>
+        <i class="fa-solid fa-chevron-down hidden text-[10px] text-ink/40 sm:block"></i>
+      </button>
+      <div x-show="userMenu" x-transition class="card absolute right-0 top-full mt-2 w-56 py-1 shadow-xl">
+        <p class="border-b border-black/5 px-4 py-2 text-xs text-ink/50" x-text="session.email"></p>
+        <a href="#pengaturan" @click="userMenu = false" class="flex items-center gap-2 px-4 py-2 text-sm hover:bg-surface"><i class="fa-solid fa-gear w-4 text-ink/40"></i> Pengaturan</a>
+        <a href="../index.html" target="_blank" rel="noopener" class="flex items-center gap-2 px-4 py-2 text-sm hover:bg-surface"><i class="fa-solid fa-globe w-4 text-ink/40"></i> Lihat Website</a>
+        <button @click="logout()" class="flex w-full items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50"><i class="fa-solid fa-right-from-bracket w-4"></i> Keluar</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="p-4 sm:p-6 lg:p-8">
+
+    <!-- ============================================================ DASHBOARD -->
+    <section x-show="route === 'dashboard'" class="space-y-6">
+      <div class="flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <h1 class="display text-4xl">Selamat datang, <span class="text-navy" x-text="session.nama"></span></h1>
+          <p class="mt-2 text-sm text-ink/60">Ringkasan operasional SDM PT. Yawiraya Bina Mandiri — data <span x-text="period"></span> hari terakhir.</p>
+        </div>
+        <div class="flex gap-2">
+          <button @click="fillNextDraft()" class="btn-light"><i class="fa-solid fa-pen-to-square"></i> Isi Daily Report</button>
+          <button @click="openEmp()" class="btn-primary"><i class="fa-solid fa-user-plus text-xs"></i> Karyawan</button>
+        </div>
+      </div>
+
+      <!-- Tile statistik -->
+      <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <a href="#karyawan" class="card group p-5 hover:ring-navy/30">
+          <div class="flex items-center justify-between text-sm text-ink/60">Total Karyawan <i class="fa-solid fa-users text-navy"></i></div>
+          <p class="mt-3 text-4xl font-light tracking-tight tabular-nums" x-text="stats.total"></p>
+          <p class="mt-1 text-xs text-ink/50"><span class="font-medium text-ink" x-text="stats.aktif"></span> aktif · <span class="font-medium text-ink" x-text="stats.oap"></span> Orang Asli Papua</p>
+        </a>
+        <a href="#laporan" class="card p-5 hover:ring-navy/30">
+          <div class="flex items-center justify-between text-sm text-ink/60">Laporan Hari Ini <i class="fa-solid fa-clipboard-check text-navy"></i></div>
+          <p class="mt-3 text-4xl font-light tracking-tight tabular-nums"><span x-text="stats.laporanHariIni"></span><span class="text-xl text-ink/40" x-show="stats.expectedToday"> / <span x-text="stats.expectedToday"></span></span></p>
+          <p class="mt-1 text-xs text-ink/50" x-show="isWork(todayISO())"><span class="font-medium text-amber-700" x-text="stats.draftToday"></span> belum diisi · <span class="font-medium text-ink" x-text="stats.pending"></span> menunggu verifikasi</p>
+          <p class="mt-1 text-xs text-ink/50" x-show="!isWork(todayISO())">Hari ini bukan hari kerja</p>
+        </a>
+        <a href="#kinerja" class="card p-5 hover:ring-navy/30">
+          <div class="flex items-center justify-between text-sm text-ink/60">Rata-rata Skor KPI <i class="fa-solid fa-chart-line text-navy"></i></div>
+          <p class="mt-3 text-4xl font-light tracking-tight tabular-nums" x-text="avgKpi"></p>
+          <span class="badge mt-1" :class="grade(avgKpi).cls"><i class="fa-solid" :class="grade(avgKpi).icon"></i><span x-text="grade(avgKpi).label"></span></span>
+        </a>
+        <a href="#laporan" @click="repFrom = periodStart(); repTo = ''" class="card p-5 hover:ring-navy/30">
+          <div class="flex items-center justify-between text-sm text-ink/60">Catatan K3 <i class="fa-solid fa-helmet-safety text-navy"></i></div>
+          <p class="mt-3 text-4xl font-light tracking-tight tabular-nums" x-text="stats.k3"></p>
+          <p class="mt-1 text-xs text-ink/50">near miss / insiden dalam <span x-text="period"></span> hari</p>
+        </a>
+      </div>
+
+      <div class="grid grid-cols-1 gap-4 xl:grid-cols-12">
+        <!-- Grafik laporan harian -->
+        <div class="card p-6 xl:col-span-8">
+          <div class="flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
+            <div><h2 class="font-semibold">Daily report per hari kerja</h2><p class="text-xs text-ink/50">Status pengisian laporan karyawan, 14 hari terakhir</p></div>
+            <a href="#laporan" class="text-xs font-medium text-navy hover:underline">Lihat semua</a>
+          </div>
+          <ul class="mt-4 flex flex-wrap gap-x-4 gap-y-1.5 text-xs text-ink/60" aria-label="Keterangan grafik">
+            <li class="inline-flex items-center gap-1.5"><span class="h-2.5 w-2.5 bg-navy"></span> Hadir</li>
+            <li class="inline-flex items-center gap-1.5"><span class="h-2.5 w-2.5 bg-slate-400"></span> Izin / sakit / cuti / alpa</li>
+            <li class="inline-flex items-center gap-1.5"><span class="h-2.5 w-2.5 border border-dashed border-amber-500 bg-amber-50"></span> Belum diisi</li>
+            <li class="inline-flex items-center gap-1.5"><span class="h-2.5 w-2.5 bg-[repeating-linear-gradient(135deg,#fff,#fff_2px,#d1d5db_2px,#d1d5db_4px)] ring-1 ring-black/10"></span> Libur</li>
+          </ul>
+          <div class="relative mt-5 h-56" role="img" :aria-label="'Grafik daily report 14 hari terakhir. Hari ini: ' + dayTip(dailyCounts.rows[13])">
+            <template x-for="g in [1, 0.5, 0]">
+              <div class="absolute left-8 right-0 border-t border-ink/10" :class="g ? 'border-dashed' : ''" :style="`bottom:${g * 100}%`">
+                <span class="absolute -left-8 w-6 -translate-y-1/2 text-right text-[10px] tabular-nums text-ink/40" x-text="Math.round(dailyCounts.max * g)"></span>
+              </div>
+            </template>
+            <div class="absolute inset-y-0 left-8 right-0 flex items-end gap-[2px]">
+              <template x-for="c in dailyCounts.rows" :key="c.d">
+                <div class="group flex h-full flex-1 cursor-default items-end justify-center"
+                  :class="c.sunday && 'bg-[repeating-linear-gradient(135deg,transparent,transparent_5px,#eef0f3_5px,#eef0f3_10px)]'"
+                  @mouseenter="showTip($event, fmtDay(c.d) + (c.today ? ' · hari ini' : ''), dayTip(c))" @mouseleave="hideTip()">
+                  <div data-bar x-show="c.total" class="flex w-full max-w-[26px] flex-col-reverse gap-[2px] overflow-hidden rounded-t-[3px]" :style="`height:${(c.total / dailyCounts.max) * 100}%`">
+                    <div x-show="c.hadir" class="min-h-0 w-full bg-navy transition-colors group-hover:bg-sky" :style="`flex:${c.hadir} 1 0`"></div>
+                    <div x-show="c.absen" class="min-h-0 w-full bg-slate-400" :style="`flex:${c.absen} 1 0`"></div>
+                    <div x-show="c.draft" class="min-h-0 w-full border border-dashed border-amber-500 bg-amber-50" :style="`flex:${c.draft} 1 0`"></div>
+                  </div>
+                </div>
+              </template>
+            </div>
+          </div>
+          <div class="ml-8 mt-2 flex gap-[2px]">
+            <template x-for="(c, i) in dailyCounts.rows" :key="c.d">
+              <span class="flex-1 text-center text-[10px] tabular-nums" :class="c.today ? 'font-semibold text-ink' : 'text-ink/40'" x-text="i % 2 === 1 || c.today ? parseInt(c.d.slice(8)) : ''"></span>
+            </template>
+          </div>
+        </div>
+
+        <!-- Status karyawan -->
+        <div class="card p-6 xl:col-span-4">
+          <h2 class="font-semibold">Status karyawan</h2>
+          <p class="text-xs text-ink/50">Komposisi <span x-text="stats.total"></span> karyawan terdaftar</p>
+          <div class="mt-6 flex h-3 gap-[2px] overflow-hidden rounded-[3px]" role="img" aria-label="Komposisi status karyawan">
+            <template x-for="s in statusCounts" :key="s.s">
+              <div x-show="s.n" class="h-full" :style="`width:${s.pct}%;background:${s.bar}`" @mouseenter="showTip($event, s.s, s.n + ' karyawan')" @mouseleave="hideTip()"></div>
+            </template>
+          </div>
+          <ul class="mt-6 divide-y divide-black/5">
+            <template x-for="s in statusCounts" :key="s.s">
+              <li>
+                <button @click="empStatus = s.s; empUnit = ''; empQ = ''; location.hash = 'karyawan'" class="flex w-full items-center gap-3 py-2.5 text-left text-sm hover:text-navy">
+                  <span class="h-2.5 w-2.5 shrink-0" :style="`background:${s.bar}`"></span>
+                  <i class="fa-solid w-4 text-center text-xs text-ink/40" :class="s.icon"></i>
+                  <span class="flex-1" x-text="s.s"></span>
+                  <span class="tabular-nums font-medium" x-text="s.n"></span>
+                </button>
+              </li>
+            </template>
+          </ul>
+        </div>
+
+        <!-- KPI per unit -->
+        <div class="card p-6 xl:col-span-7">
+          <div class="flex items-start justify-between gap-4">
+            <div><h2 class="font-semibold">Skor KPI rata-rata per unit kerja</h2><p class="text-xs text-ink/50">Skala 0–100 · <span x-text="period"></span> hari terakhir</p></div>
+            <a href="#kinerja" class="text-xs font-medium text-navy hover:underline">Detail kinerja</a>
+          </div>
+          <div class="mt-6 space-y-3">
+            <template x-for="u in unitKpi" :key="u.unit.id">
+              <div class="grid grid-cols-[8.5rem_1fr_2rem] items-center gap-3 text-sm sm:grid-cols-[12rem_1fr_2rem]" @mouseenter="showTip($event, u.unit.nama, 'Skor ' + u.skor + ' · ' + u.n + ' karyawan')" @mouseleave="hideTip()">
+                <span class="truncate text-ink/70" x-text="u.unit.nama"></span>
+                <div class="h-3 bg-surface"><div class="h-full rounded-r-[3px] bg-navy" :style="`width:${u.skor}%`"></div></div>
+                <span class="text-right font-medium tabular-nums" x-text="u.skor"></span>
+              </div>
+            </template>
+          </div>
+        </div>
+
+        <!-- Peringatan -->
+        <div class="card flex flex-col p-6 xl:col-span-5">
+          <h2 class="font-semibold">Perlu perhatian</h2>
+          <p class="text-xs text-ink/50">Kontrak berakhir ≤ 30 hari &amp; dokumen kedaluwarsa</p>
+          <ul class="mt-4 flex-1 divide-y divide-black/5">
+            <template x-for="x in expiring" :key="x.emp.id">
+              <li class="flex items-center gap-3 py-3">
+                <span class="grid h-9 w-9 shrink-0 place-items-center" :class="x.sisa < 0 ? 'bg-red-50 text-red-600' : 'bg-amber-50 text-amber-700'"><i class="fa-solid fa-file-signature text-sm"></i></span>
+                <button @click="openDetail(x.emp, 'dokumen')" class="min-w-0 flex-1 text-left">
+                  <span class="block truncate text-sm font-medium hover:text-navy" x-text="x.emp.nama"></span>
+                  <span class="block text-xs text-ink/50">Kontrak <span x-text="x.emp.kontrak.jenis"></span> · berakhir <span x-text="fmtDate(x.emp.kontrak.selesai)"></span></span>
+                </button>
+                <span class="badge" :class="x.sisa < 0 ? 'bg-red-50 text-red-700 ring-red-600/20' : 'bg-amber-50 text-amber-800 ring-amber-600/20'" x-text="x.sisa < 0 ? 'Lewat ' + Math.abs(x.sisa) + ' hr' : x.sisa + ' hari lagi'"></span>
+              </li>
+            </template>
+            <template x-for="d in allDocs.filter(d => !d.kontrak && d.state === 'Kedaluwarsa')" :key="d.key">
+              <li class="flex items-center gap-3 py-3">
+                <span class="grid h-9 w-9 shrink-0 place-items-center bg-red-50 text-red-600"><i class="fa-solid fa-certificate text-sm"></i></span>
+                <button @click="openDetail(d.emp, 'dokumen')" class="min-w-0 flex-1 text-left">
+                  <span class="block truncate text-sm font-medium hover:text-navy" x-text="d.nama"></span>
+                  <span class="block text-xs text-ink/50" x-text="d.emp.nama + ' · ' + fmtDate(d.berlaku)"></span>
+                </button>
+                <span class="badge bg-red-50 text-red-700 ring-red-600/20"><i class="fa-solid fa-circle-xmark"></i> Kedaluwarsa</span>
+              </li>
+            </template>
+          </ul>
+          <a href="#dokumen" class="mt-4 text-xs font-medium text-navy hover:underline">Kelola dokumen &amp; kontrak →</a>
+        </div>
+
+        <!-- Top kinerja -->
+        <div class="card p-6 xl:col-span-6">
+          <div class="flex items-center justify-between"><h2 class="font-semibold">Kinerja terbaik</h2><a href="#kinerja" class="text-xs font-medium text-navy hover:underline">Peringkat lengkap</a></div>
+          <ol class="mt-4 divide-y divide-black/5">
+            <template x-for="(r, i) in [...kpiRows].sort((a, b) => b.skor - a.skor).slice(0, 5)" :key="r.emp.id">
+              <li class="flex items-center gap-3 py-3">
+                <span class="w-5 text-sm tabular-nums text-ink/40" x-text="i + 1"></span>
+                <div class="grid h-9 w-9 shrink-0 place-items-center overflow-hidden bg-navy text-[11px] font-semibold text-white"><img x-show="r.emp.foto" :src="r.emp.foto" class="h-full w-full object-cover" alt=""><span x-show="!r.emp.foto" x-text="initials(r.emp.nama)"></span></div>
+                <button @click="openDetail(r.emp, 'kinerja')" class="min-w-0 flex-1 text-left"><span class="block truncate text-sm font-medium hover:text-navy" x-text="r.emp.nama"></span><span class="block truncate text-xs text-ink/50" x-text="unitById(r.emp.unitId).nama"></span></button>
+                <span class="text-lg font-light tabular-nums" x-text="r.skor"></span>
+              </li>
+            </template>
+          </ol>
+        </div>
+
+        <!-- Aktivitas -->
+        <div class="card p-6 xl:col-span-6">
+          <h2 class="font-semibold">Daily report terbaru</h2>
+          <ul class="mt-4 divide-y divide-black/5">
+            <template x-for="r in recentReports" :key="r.id">
+              <li class="flex items-start gap-3 py-3">
+                <i class="fa-solid mt-1 w-4 text-center text-sm" :class="[repSt(r.status).icon, r.status === 'Kendala' ? 'text-red-600' : r.status === 'Selesai' ? 'text-emerald-600' : 'text-blue-600']"></i>
+                <div class="min-w-0 flex-1">
+                  <p class="truncate text-sm"><span class="font-medium" x-text="empById(r.empId).nama"></span> — <span x-text="r.kegiatan"></span></p>
+                  <p class="text-xs text-ink/50"><span x-text="fmtDay(r.tanggal)"></span> · <span x-text="r.lokasi"></span> · progres <span x-text="r.progress + '%'"></span></p>
+                </div>
+                <span x-show="!r.verified" class="badge bg-blue-50 text-blue-700 ring-blue-600/20">Baru</span>
+              </li>
+            </template>
+          </ul>
+          <template x-if="db.activity.length">
+            <div class="mt-4 border-t border-black/5 pt-4">
+              <p class="text-xs font-semibold uppercase tracking-wider text-ink/40">Log aktivitas admin</p>
+              <ul class="mt-2 space-y-1.5">
+                <template x-for="a in db.activity.slice(0, 4)" :key="a.t"><li class="text-xs text-ink/60"><span class="tabular-nums text-ink/40" x-text="fmtTime(a.t)"></span> · <span x-text="a.msg"></span></li></template>
+              </ul>
+            </div>
+          </template>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================ MONITORING KINERJA -->
+    <section x-show="route === 'kinerja'" class="space-y-6">
+      <div class="flex flex-wrap items-end justify-between gap-4">
+        <div><h1 class="display text-4xl">Monitoring <span class="text-navy">Kinerja</span></h1><p class="mt-2 text-sm text-ink/60">Skor dihitung otomatis dari daily report setiap karyawan aktif.</p></div>
+        <div class="flex flex-wrap items-center gap-2">
+          <div class="flex rounded-md bg-white p-1 ring-1 ring-black/5" role="group" aria-label="Periode">
+            <template x-for="p in [7, 14, 30]"><button @click="period = p" class="seg" :class="period === p ? 'bg-navy text-white' : 'text-ink/60 hover:text-ink'" x-text="p + ' hari'"></button></template>
+          </div>
+          <select x-model="kinerjaUnit" class="input w-auto py-2" aria-label="Filter unit"><option value="">Semua unit</option><template x-for="u in db.units" :key="u.id"><option :value="u.id" x-text="u.nama"></option></template></select>
+          <select x-model="kinerjaSort" class="input w-auto py-2" aria-label="Urutkan"><option value="skor">Urut: Skor</option><option value="hadir">Urut: Kehadiran</option><option value="prod">Urut: Produktivitas</option><option value="kual">Urut: Kualitas</option><option value="nama">Urut: Nama</option></select>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 gap-4 lg:grid-cols-12">
+        <div class="card bg-navy p-6 text-white ring-0 lg:col-span-3">
+          <p class="text-sm text-white/60">Rata-rata skor KPI</p>
+          <p class="mt-2 text-6xl font-light tracking-tight tabular-nums" x-text="avgKpi"></p>
+          <p class="mt-2 text-xs text-white/60"><span x-text="kpiRows.filter(r => r.n).length"></span> karyawan dinilai · <span x-text="workdays()"></span> hari kerja</p>
+        </div>
+        <div class="grid grid-cols-2 gap-4 sm:grid-cols-4 lg:col-span-9">
+          <template x-for="g in gradeDist" :key="g.g">
+            <div class="card p-5">
+              <span class="badge" :class="g.info.cls"><i class="fa-solid" :class="g.info.icon"></i><span x-text="g.g"></span></span>
+              <p class="mt-4 text-3xl font-light tabular-nums" x-text="g.n"></p>
+              <p class="text-xs text-ink/50">karyawan</p>
+            </div>
+          </template>
+        </div>
+      </div>
+
+      <div x-data="{ open: false }" class="card">
+        <button @click="open = !open" class="flex w-full items-center justify-between px-5 py-3 text-left text-sm" :aria-expanded="open">
+          <span><i class="fa-solid fa-calculator mr-2 text-navy"></i> Rumus skor KPI</span><i class="fa-solid fa-chevron-down text-xs transition" :class="open && 'rotate-180'"></i>
+        </button>
+        <div x-show="open" x-collapse class="grid gap-4 border-t border-black/5 px-5 py-4 text-sm text-ink/70 sm:grid-cols-2 lg:grid-cols-4">
+          <p><b class="text-ink">Produktivitas 35%</b><br>Rata-rata progres pekerjaan harian.</p>
+          <p><b class="text-ink">Kualitas 25%</b><br>Rata-rata nilai kualitas (1–5) dari pengawas.</p>
+          <p><b class="text-ink">Kehadiran 25%</b><br>Hari hadir ÷ (hari kerja kalender − izin/sakit/cuti). Alpa &amp; laporan belum diisi mengurangi skor.</p>
+          <p><b class="text-ink">K3 15%</b><br>100 − 25 per insiden − 10 per near miss.</p>
+        </div>
+      </div>
+
+      <div class="card overflow-x-auto">
+        <table class="w-full min-w-[960px] text-sm">
+          <thead class="border-b border-black/5"><tr>
+            <th class="th">#</th><th class="th">Karyawan</th><th class="th">Unit</th><th class="th text-right">Laporan</th><th class="th text-right">Kehadiran</th><th class="th text-right">Produktivitas</th><th class="th text-right">Kualitas</th><th class="th text-right">K3</th><th class="th">Skor</th><th class="th">Predikat</th><th class="th"></th>
+          </tr></thead>
+          <tbody class="divide-y divide-black/5">
+            <template x-for="(r, i) in kpiRows" :key="r.emp.id">
+              <tr class="hover:bg-surface/60">
+                <td class="td tabular-nums text-ink/40" x-text="i + 1"></td>
+                <td class="td">
+                  <button @click="openDetail(r.emp, 'kinerja')" class="flex items-center gap-3 text-left">
+                    <div class="grid h-9 w-9 shrink-0 place-items-center overflow-hidden bg-navy text-[11px] font-semibold text-white"><img x-show="r.emp.foto" :src="r.emp.foto" class="h-full w-full object-cover" alt=""><span x-show="!r.emp.foto" x-text="initials(r.emp.nama)"></span></div>
+                    <span><span class="block font-medium hover:text-navy" x-text="r.emp.nama"></span><span class="block text-xs text-ink/50" x-text="r.emp.jabatan"></span></span>
+                  </button>
+                </td>
+                <td class="td text-ink/70" x-text="unitById(r.emp.unitId).kode"></td>
+                <td class="td text-right tabular-nums" x-text="r.n"></td>
+                <td class="td text-right tabular-nums" x-text="r.hadir + '%'"></td>
+                <td class="td text-right tabular-nums" x-text="r.prod + '%'"></td>
+                <td class="td text-right tabular-nums" x-text="r.kual + '%'"></td>
+                <td class="td whitespace-nowrap text-right tabular-nums"><span x-text="r.k3"></span><i x-show="r.insiden || r.nearmiss" class="fa-solid fa-triangle-exclamation ml-1 text-amber-600" :title="r.insiden + ' insiden, ' + r.nearmiss + ' near miss'"></i></td>
+                <td class="td"><div class="flex items-center gap-2"><div class="h-2 w-24 bg-surface"><div class="h-full rounded-r-[3px] bg-navy" :style="`width:${r.skor}%`"></div></div><span class="w-7 font-semibold tabular-nums" x-text="r.skor"></span></div></td>
+                <td class="td"><span x-show="r.n" class="badge" :class="grade(r.skor).cls"><i class="fa-solid" :class="grade(r.skor).icon"></i><span x-text="grade(r.skor).label"></span></span><span x-show="!r.n" class="text-xs text-ink/40">Belum ada laporan</span></td>
+                <td class="td text-right"><button @click="openDetail(r.emp, 'kinerja')" class="btn-icon" aria-label="Detail"><i class="fa-solid fa-chevron-right text-xs"></i></button></td>
+              </tr>
+            </template>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ============================================================ KARYAWAN -->
+    <section x-show="route === 'karyawan'" class="space-y-6">
+      <div class="flex flex-wrap items-end justify-between gap-4">
+        <div><h1 class="display text-4xl">Database <span class="text-navy">Karyawan</span></h1><p class="mt-2 text-sm text-ink/60"><span x-text="filteredEmps.length"></span> dari <span x-text="db.employees.length"></span> karyawan</p></div>
+        <button @click="openEmp()" class="btn-primary"><i class="fa-solid fa-user-plus text-xs"></i> Tambah Karyawan</button>
+      </div>
+      <div class="card flex flex-wrap items-center gap-2 p-3">
+        <div class="relative min-w-[200px] flex-1"><i class="fa-solid fa-magnifying-glass pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-xs text-ink/40"></i><input x-model="empQ" type="search" placeholder="Cari nama, NIK, jabatan, telepon…" class="input pl-9" aria-label="Cari karyawan"></div>
+        <select x-model="empUnit" class="input w-auto" aria-label="Filter unit"><option value="">Semua unit</option><template x-for="u in db.units" :key="u.id"><option :value="u.id" x-text="u.nama"></option></template></select>
+        <select x-model="empStatus" class="input w-auto" aria-label="Filter status"><option value="">Semua status</option><template x-for="s in Object.keys(statusCounts.reduce((a, x) => (a[x.s] = 1, a), {}))"><option :value="s" x-text="s"></option></template></select>
+        <div class="flex rounded-md bg-surface p-1" role="group" aria-label="Tampilan">
+          <button @click="empView = 'tabel'" class="seg" :class="empView === 'tabel' ? 'bg-white shadow-sm' : 'text-ink/50'" aria-label="Tampilan tabel"><i class="fa-solid fa-list"></i></button>
+          <button @click="empView = 'kartu'" class="seg" :class="empView === 'kartu' ? 'bg-white shadow-sm' : 'text-ink/50'" aria-label="Tampilan kartu"><i class="fa-solid fa-grip"></i></button>
+        </div>
+      </div>
+
+      <div x-show="empView === 'tabel'" class="card overflow-x-auto">
+        <table class="w-full min-w-[900px] text-sm">
+          <thead class="border-b border-black/5"><tr><th class="th">Karyawan</th><th class="th">Unit &amp; Jabatan</th><th class="th">Kontak</th><th class="th">Status</th><th class="th">Kontrak</th><th class="th text-right">Aksi</th></tr></thead>
+          <tbody class="divide-y divide-black/5">
+            <template x-for="e in filteredEmps" :key="e.id">
+              <tr class="hover:bg-surface/60">
+                <td class="td">
+                  <button @click="openDetail(e)" class="flex items-center gap-3 text-left">
+                    <div class="grid h-11 w-9 shrink-0 place-items-center overflow-hidden bg-navy text-[11px] font-semibold text-white"><img x-show="e.foto" :src="e.foto" class="h-full w-full object-cover" alt=""><span x-show="!e.foto" x-text="initials(e.nama)"></span></div>
+                    <span><span class="block font-medium hover:text-navy" x-text="e.nama"></span><span class="block text-xs text-ink/50"><span x-text="e.nik"></span><span x-show="e.oap" class="ml-1.5 text-navy">· OAP</span></span></span>
+                  </button>
+                </td>
+                <td class="td"><span class="block" x-text="unitById(e.unitId).nama"></span><span class="block text-xs text-ink/50" x-text="e.jabatan"></span></td>
+                <td class="td"><a :href="'tel:' + e.telp" class="block hover:text-navy" x-text="e.telp"></a><span class="block text-xs text-ink/50" x-text="e.email"></span></td>
+                <td class="td"><span class="badge" :class="empSt(e.status).cls"><i class="fa-solid" :class="empSt(e.status).icon"></i><span x-text="e.status"></span></span></td>
+                <td class="td"><span class="block" x-text="e.kontrak.jenis"></span><span class="block text-xs" :class="e.kontrak.selesai && daysBetween(todayISO(), e.kontrak.selesai) <= 30 ? 'font-medium text-amber-700' : 'text-ink/50'" x-text="e.kontrak.selesai ? 's/d ' + fmtDate(e.kontrak.selesai) : 'Tetap'"></span></td>
+                <td class="td whitespace-nowrap text-right">
+                  <button @click="openDetail(e)" class="btn-icon" aria-label="Lihat detail" title="Detail"><i class="fa-regular fa-eye"></i></button>
+                  <button @click="openEmp(e)" class="btn-icon" aria-label="Ubah" title="Ubah"><i class="fa-regular fa-pen-to-square"></i></button>
+                  <button @click="deleteEmp(e)" class="btn-icon hover:!text-red-600" aria-label="Hapus" title="Hapus"><i class="fa-regular fa-trash-can"></i></button>
+                </td>
+              </tr>
+            </template>
+          </tbody>
+        </table>
+        <p x-show="!filteredEmps.length" class="p-10 text-center text-sm text-ink/50">Tidak ada karyawan yang cocok dengan filter.</p>
+      </div>
+
+      <div x-show="empView === 'kartu'" class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
+        <template x-for="e in filteredEmps" :key="e.id">
+          <button @click="openDetail(e)" class="card group text-left transition hover:shadow-lg">
+            <div class="relative aspect-[4/5] overflow-hidden bg-navy">
+              <img x-show="e.foto" :src="e.foto" :alt="e.nama" class="h-full w-full object-cover transition duration-500 group-hover:scale-105">
+              <span x-show="!e.foto" class="absolute inset-0 grid place-items-center text-5xl font-light text-white/80" x-text="initials(e.nama)"></span>
+              <span class="badge absolute left-3 top-3 bg-white" :class="empSt(e.status).cls"><i class="fa-solid" :class="empSt(e.status).icon"></i><span x-text="e.status"></span></span>
+            </div>
+            <div class="p-4">
+              <p class="font-semibold" x-text="e.nama"></p>
+              <p class="text-sm text-ink/60" x-text="e.jabatan"></p>
+              <p class="mt-2 text-xs text-ink/40"><span x-text="e.nik"></span> · <span x-text="unitById(e.unitId).kode"></span></p>
+            </div>
+          </button>
+        </template>
+      </div>
+    </section>
+
+    <!-- ============================================================ UNIT KERJA -->
+    <section x-show="route === 'unit'" class="space-y-6">
+      <div class="flex flex-wrap items-end justify-between gap-4">
+        <div><h1 class="display text-4xl">Unit <span class="text-navy">Kerja</span></h1><p class="mt-2 text-sm text-ink/60"><span x-text="db.units.length"></span> unit kerja aktif</p></div>
+        <button @click="openUnit()" class="btn-primary"><i class="fa-solid fa-plus text-xs"></i> Tambah Unit</button>
+      </div>
+      <div class="grid grid-cols-1 gap-4 md:grid-cols-2 2xl:grid-cols-3">
+        <template x-for="u in db.units" :key="u.id">
+          <article class="card flex flex-col p-6">
+            <div class="flex items-start justify-between gap-3">
+              <div>
+                <span class="bg-navy px-2 py-0.5 font-mono text-[11px] font-semibold text-white" x-text="u.kode"></span>
+                <h2 class="mt-3 text-lg font-semibold leading-snug" x-text="u.nama"></h2>
+                <p class="text-xs text-ink/50"><i class="fa-solid fa-location-dot mr-1"></i><span x-text="u.lokasi"></span></p>
+              </div>
+              <div class="flex shrink-0">
+                <button @click="openUnit(u)" class="btn-icon" aria-label="Ubah unit"><i class="fa-regular fa-pen-to-square"></i></button>
+                <button @click="deleteUnit(u)" class="btn-icon hover:!text-red-600" aria-label="Hapus unit"><i class="fa-regular fa-trash-can"></i></button>
+              </div>
+            </div>
+            <p class="mt-3 flex-1 text-sm text-ink/60" x-text="u.deskripsi"></p>
+            <div class="mt-4 flex flex-wrap gap-1.5">
+              <template x-for="k in u.kegiatan.slice(0, 3)"><span class="bg-surface px-2 py-1 text-[11px] text-ink/60" x-text="k"></span></template>
+              <span x-show="u.kegiatan.length > 3" class="px-1 py-1 text-[11px] text-ink/40" x-text="'+' + (u.kegiatan.length - 3)"></span>
+            </div>
+            <dl class="mt-5 grid grid-cols-3 border-t border-black/5 pt-4 text-center">
+              <div><dt class="text-[11px] text-ink/40">Karyawan</dt><dd class="text-xl font-light tabular-nums" x-text="empCountIn(u.id)"></dd></div>
+              <div><dt class="text-[11px] text-ink/40">Skor KPI</dt><dd class="text-xl font-light tabular-nums" x-text="(unitKpi.find(x => x.unit.id === u.id) || {}).skor ?? '—'"></dd></div>
+              <div><dt class="text-[11px] text-ink/40">Laporan <span x-text="period"></span>h</dt><dd class="text-xl font-light tabular-nums" x-text="db.reports.filter(r => r.unitId === u.id && r.tanggal >= periodStart()).length"></dd></div>
+            </dl>
+            <div class="mt-4 flex items-center justify-between gap-3 border-t border-black/5 pt-4 text-sm">
+              <span class="min-w-0 truncate text-ink/60" x-show="unitHead(u)"><i class="fa-solid fa-user-tie mr-1.5 text-ink/30"></i><span x-text="unitHead(u)?.nama"></span></span>
+              <button @click="empUnit = u.id; empStatus = ''; empQ = ''; location.hash = 'karyawan'" class="shrink-0 text-xs font-medium text-navy hover:underline">Lihat karyawan →</button>
+            </div>
+          </article>
+        </template>
+      </div>
+    </section>
+
+    <!-- ============================================================ DAILY REPORT -->
+    <section x-show="route === 'laporan'" class="space-y-6" x-effect="repFrom, repTo, repUnit, repStatus, repKehadiran, repVerified, repQ, repLimit = 50">
+      <div class="flex flex-wrap items-end justify-between gap-4">
+        <div><h1 class="display text-4xl">Daily <span class="text-navy">Report</span></h1><p class="mt-2 text-sm text-ink/60">Dibuat otomatis oleh sistem setiap hari kerja — pengawas tinggal mengisi &amp; memverifikasi.</p></div>
+        <div class="flex flex-wrap gap-2">
+          <button @click="exportReportsCSV()" class="btn-light"><i class="fa-solid fa-file-csv"></i> Export CSV</button>
+          <button @click="verifyAllVisible()" class="btn-light"><i class="fa-solid fa-check-double"></i> Verifikasi semua</button>
+          <button @click="openReport()" class="btn-light" title="Untuk lembur di hari libur atau laporan tambahan"><i class="fa-solid fa-plus text-xs"></i> Laporan Manual</button>
+          <button @click="fillNextDraft()" class="btn-primary" :disabled="!stats.draft"><i class="fa-solid fa-pen-to-square"></i><span>Isi Laporan (<span x-text="stats.draft"></span>)</span></button>
+        </div>
+      </div>
+
+      <!-- Status generator otomatis -->
+      <div class="card grid grid-cols-1 gap-6 p-5 lg:grid-cols-12 lg:items-center">
+        <div class="flex items-start gap-4 lg:col-span-5">
+          <span class="grid h-11 w-11 shrink-0 place-items-center" :class="db.kalender.otomatis ? 'bg-navy text-white' : 'bg-surface text-ink/40'"><i class="fa-solid fa-robot"></i></span>
+          <div class="text-sm">
+            <p class="font-semibold">Generator otomatis <span class="badge ml-1" :class="db.kalender.otomatis ? 'bg-emerald-50 text-emerald-700 ring-emerald-600/20' : 'bg-slate-100 text-slate-600 ring-slate-500/20'" x-text="db.kalender.otomatis ? 'Aktif' : 'Nonaktif'"></span></p>
+            <p class="mt-1 text-ink/60">Setiap hari kerja (<span x-text="db.kalender.hariKerja.map(i => ['Min','Sen','Sel','Rab','Kam','Jum','Sab'][i]).join(', ')"></span>) pukul <b class="text-ink" x-text="db.kalender.jamGenerate"></b>, sistem membuat 1 draft laporan untuk setiap karyawan aktif. Hari libur dilewati.</p>
+          </div>
+        </div>
+        <div class="lg:col-span-5">
+          <div class="flex items-baseline justify-between text-sm">
+            <span class="font-medium">Hari ini · <span x-text="fmtDay(todayISO())"></span></span>
+            <span x-show="todayProgress.work" class="tabular-nums text-ink/60"><b class="text-ink" x-text="todayProgress.filled"></b> / <span x-text="todayProgress.total"></span> terisi</span>
+          </div>
+          <template x-if="todayProgress.work && todayProgress.total">
+            <div>
+              <div class="mt-2 flex h-2.5 gap-[2px]" role="img" :aria-label="todayProgress.pct + '% laporan hari ini sudah diisi'">
+                <div class="h-full rounded-l-[3px] bg-navy" :style="`width:${todayProgress.pct}%`"></div>
+                <div class="h-full flex-1 rounded-r-[3px] bg-surface ring-1 ring-inset ring-black/5"></div>
+              </div>
+              <p class="mt-1.5 text-xs text-ink/50"><span x-text="todayProgress.pct"></span>% terisi · <span x-text="todayProgress.draft"></span> belum diisi</p>
+            </div>
+          </template>
+          <p x-show="todayProgress.work && !todayProgress.total" class="mt-2 text-xs text-ink/50">Draft hari ini akan dibuat pukul <span x-text="db.kalender.jamGenerate"></span>.</p>
+          <p x-show="!todayProgress.work" class="mt-2 text-xs text-ink/50"><i class="fa-solid fa-mug-hot mr-1"></i> Hari ini bukan hari kerja<span x-show="holiday(todayISO())" x-text="' — ' + holiday(todayISO())"></span>.</p>
+        </div>
+        <div class="flex gap-2 lg:col-span-2 lg:justify-end">
+          <button @click="generateNow()" class="btn-light w-full lg:w-auto" title="Jalankan generator sekarang"><i class="fa-solid fa-rotate"></i> Generate</button>
+        </div>
+      </div>
+
+      <nav class="flex gap-6 border-b border-black/10" role="tablist">
+        <button role="tab" @click="repTab = 'daftar'" class="tab" :class="repTab === 'daftar' && 'is-active'" :aria-selected="repTab === 'daftar'"><i class="fa-solid fa-list mr-1.5"></i> Daftar Laporan</button>
+        <button role="tab" @click="repTab = 'kalender'" class="tab" :class="repTab === 'kalender' && 'is-active'" :aria-selected="repTab === 'kalender'"><i class="fa-regular fa-calendar mr-1.5"></i> Kalender Kerja</button>
+      </nav>
+
+      <!-- ===== Tab: Daftar ===== -->
+      <div x-show="repTab === 'daftar'" class="space-y-6">
+        <div class="card grid gap-2 p-3 sm:grid-cols-2 lg:grid-cols-7">
+          <label><span class="sr-only">Dari tanggal</span><input x-model="repFrom" type="date" class="input" title="Dari tanggal"></label>
+          <label><span class="sr-only">Sampai tanggal</span><input x-model="repTo" type="date" class="input" title="Sampai tanggal"></label>
+          <select x-model="repUnit" class="input" aria-label="Filter unit"><option value="">Semua unit</option><template x-for="u in db.units" :key="u.id"><option :value="u.id" x-text="u.nama"></option></template></select>
+          <select x-model="repStatus" class="input" aria-label="Filter status"><option value="">Semua status</option><option>Belum Diisi</option><option>Selesai</option><option>Proses</option><option>Kendala</option></select>
+          <select x-model="repKehadiran" class="input" aria-label="Filter kehadiran"><option value="">Semua kehadiran</option><option>Hadir</option><option>Izin</option><option>Sakit</option><option>Cuti</option><option>Alpa</option></select>
+          <select x-model="repVerified" class="input" aria-label="Filter verifikasi"><option value="">Semua verifikasi</option><option value="true">Terverifikasi</option><option value="false">Belum diverifikasi</option></select>
+          <div class="relative"><i class="fa-solid fa-magnifying-glass pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-xs text-ink/40"></i><input x-model="repQ" type="search" placeholder="Cari…" class="input pl-9" aria-label="Cari laporan"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-4 lg:grid-cols-5">
+          <div class="card p-4"><p class="text-xs text-ink/50">Total entri</p><p class="mt-1 text-2xl font-light tabular-nums" x-text="filteredReports.length"></p></div>
+          <button @click="repStatus = repStatus === 'Belum Diisi' ? '' : 'Belum Diisi'" class="card p-4 text-left transition" :class="repStatus === 'Belum Diisi' && 'ring-2 ring-navy'"><p class="flex items-center gap-1.5 text-xs text-ink/50"><i class="fa-regular fa-hourglass-half"></i> Belum diisi</p><p class="mt-1 text-2xl font-light tabular-nums" x-text="filteredReports.filter(r => r.draft).length"></p></button>
+          <div class="card p-4"><p class="flex items-center gap-1.5 text-xs text-ink/50"><i class="fa-solid fa-user-check"></i> Hadir</p><p class="mt-1 text-2xl font-light tabular-nums" x-text="filteredReports.filter(r => !r.draft && r.kehadiran === 'Hadir').length"></p></div>
+          <div class="card p-4"><p class="flex items-center gap-1.5 text-xs text-ink/50"><i class="fa-solid fa-user-clock"></i> Izin / Sakit / Cuti / Alpa</p><p class="mt-1 text-2xl font-light tabular-nums" x-text="filteredReports.filter(r => !r.draft && r.kehadiran !== 'Hadir').length"></p></div>
+          <div class="card p-4"><p class="text-xs text-ink/50">Total jam kerja</p><p class="mt-1 text-2xl font-light tabular-nums" x-text="filteredReports.reduce((a, r) => a + (r.draft ? 0 : r.jam), 0).toLocaleString('id-ID')"></p></div>
+        </div>
+        <div class="card overflow-x-auto">
+          <table class="w-full min-w-[1180px] text-sm">
+            <thead class="border-b border-black/5"><tr><th class="th">Tanggal</th><th class="th">Karyawan</th><th class="th">Kehadiran</th><th class="th">Kegiatan &amp; Lokasi</th><th class="th text-right">Jam</th><th class="th">Progres</th><th class="th">Kualitas</th><th class="th">K3</th><th class="th">Status</th><th class="th">Verifikasi</th><th class="th"></th></tr></thead>
+            <tbody class="divide-y divide-black/5">
+              <template x-for="r in filteredReports.slice(0, repLimit)" :key="r.id">
+                <tr :class="r.draft ? 'bg-amber-50/40 hover:bg-amber-50' : 'hover:bg-surface/60'">
+                  <td class="td whitespace-nowrap text-ink/70"><span x-text="fmtDay(r.tanggal)"></span><span x-show="r.auto" class="ml-1 text-ink/30" title="Dibuat otomatis oleh sistem"><i class="fa-solid fa-robot text-[10px]"></i></span></td>
+                  <td class="td"><button @click="openDetail(empById(r.empId), 'laporan')" class="text-left"><span class="block font-medium hover:text-navy" x-text="empById(r.empId).nama"></span><span class="block text-xs text-ink/50" x-text="unitById(r.unitId).kode"></span></button></td>
+                  <!-- Draft: belum diisi -->
+                  <template x-if="r.draft">
+                    <td class="td" colspan="7"><span class="badge bg-white text-amber-800 ring-amber-600/30"><i class="fa-regular fa-hourglass-half"></i> Belum diisi</span><span class="ml-2 text-xs text-ink/40">Draft dibuat otomatis oleh sistem — menunggu diisi pengawas.</span></td>
+                  </template>
+                  <!-- Tidak hadir -->
+                  <template x-if="!r.draft && r.kehadiran !== 'Hadir'">
+                    <td class="td"><span class="badge" :class="kehadiranOf(r.kehadiran).cls"><i class="fa-solid" :class="kehadiranOf(r.kehadiran).icon"></i><span x-text="r.kehadiran"></span></span></td>
+                  </template>
+                  <template x-if="!r.draft && r.kehadiran !== 'Hadir'">
+                    <td class="td text-xs italic text-ink/50" colspan="6" x-text="r.catatan || '—'"></td>
+                  </template>
+                  <!-- Hadir & terisi -->
+                  <template x-if="!r.draft && r.kehadiran === 'Hadir'">
+                    <td class="td"><span class="badge" :class="kehadiranOf('Hadir').cls"><i class="fa-solid fa-user-check"></i> Hadir</span></td>
+                  </template>
+                  <template x-if="!r.draft && r.kehadiran === 'Hadir'">
+                    <td class="td max-w-xs"><span class="block" x-text="r.kegiatan"></span><span class="block text-xs text-ink/50"><i class="fa-solid fa-location-dot mr-1"></i><span x-text="r.lokasi || '—'"></span></span><span x-show="r.catatan" class="mt-1 block text-xs italic text-ink/50" x-text="r.catatan"></span></td>
+                  </template>
+                  <template x-if="!r.draft && r.kehadiran === 'Hadir'">
+                    <td class="td text-right tabular-nums" x-text="r.jam"></td>
+                  </template>
+                  <template x-if="!r.draft && r.kehadiran === 'Hadir'">
+                    <td class="td"><div class="flex items-center gap-2"><div class="h-1.5 w-16 bg-surface"><div class="h-full bg-navy" :style="`width:${r.progress}%`"></div></div><span class="tabular-nums text-xs" x-text="r.progress + '%'"></span></div></td>
+                  </template>
+                  <template x-if="!r.draft && r.kehadiran === 'Hadir'">
+                    <td class="td whitespace-nowrap text-xs text-amber-500" :aria-label="'Kualitas ' + r.kualitas + ' dari 5'"><template x-for="n in 5"><i :class="n <= r.kualitas ? 'fa-solid fa-star' : 'fa-regular fa-star text-ink/20'"></i></template></td>
+                  </template>
+                  <template x-if="!r.draft && r.kehadiran === 'Hadir'">
+                    <td class="td whitespace-nowrap text-xs" :class="k3Status(r.k3).cls"><i class="fa-solid mr-1" :class="k3Status(r.k3).icon"></i><span x-text="r.k3"></span></td>
+                  </template>
+                  <template x-if="!r.draft && r.kehadiran === 'Hadir'">
+                    <td class="td"><span class="badge" :class="repSt(r.status).cls"><i class="fa-solid" :class="repSt(r.status).icon"></i><span x-text="r.status"></span></span></td>
+                  </template>
+                  <td class="td">
+                    <button x-show="!r.draft" @click="verifyReport(r)" class="badge transition" :class="r.verified ? 'bg-emerald-50 text-emerald-700 ring-emerald-600/20 hover:bg-emerald-100' : 'bg-white text-ink/60 ring-black/15 hover:bg-surface'">
+                      <i class="fa-solid" :class="r.verified ? 'fa-circle-check' : 'fa-hourglass-half'"></i><span x-text="r.verified ? 'Terverifikasi' : 'Verifikasi'"></span>
+                    </button>
+                  </td>
+                  <td class="td whitespace-nowrap text-right">
+                    <button x-show="r.draft" @click="openReport(r)" class="btn-primary px-3 py-1.5 text-xs"><i class="fa-solid fa-pen"></i> Isi</button>
+                    <button x-show="!r.draft" @click="openReport(r)" class="btn-icon" aria-label="Ubah laporan"><i class="fa-regular fa-pen-to-square"></i></button>
+                    <button x-show="!r.draft" @click="deleteReport(r)" class="btn-icon hover:!text-red-600" aria-label="Hapus laporan"><i class="fa-regular fa-trash-can"></i></button>
+                  </td>
+                </tr>
+              </template>
+            </tbody>
+          </table>
+          <p x-show="!filteredReports.length" class="p-10 text-center text-sm text-ink/50">Tidak ada laporan pada filter ini.</p>
+          <div x-show="filteredReports.length > repLimit" class="border-t border-black/5 p-3 text-center">
+            <button @click="repLimit += 50" class="btn-light">Tampilkan lebih banyak (<span x-text="filteredReports.length - repLimit"></span> lagi)</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== Tab: Kalender kerja ===== -->
+      <div x-show="repTab === 'kalender'" x-cloak class="grid grid-cols-1 gap-4 xl:grid-cols-12">
+        <div class="card p-5 xl:col-span-8">
+          <div class="flex items-center justify-between">
+            <h2 class="font-semibold capitalize" x-text="calTitle"></h2>
+            <div class="flex gap-1">
+              <button @click="calShift(-1)" class="btn-icon" aria-label="Bulan sebelumnya"><i class="fa-solid fa-chevron-left"></i></button>
+              <button @click="calMonth = todayISO().slice(0, 8) + '01'" class="btn-light px-3 py-1.5 text-xs">Hari ini</button>
+              <button @click="calShift(1)" class="btn-icon" aria-label="Bulan berikutnya"><i class="fa-solid fa-chevron-right"></i></button>
+            </div>
+          </div>
+          <div class="mt-4 grid grid-cols-7 gap-px bg-black/5 ring-1 ring-black/5">
+            <template x-for="h in ['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min']"><div class="bg-surface py-2 text-center text-[11px] font-semibold uppercase tracking-wider text-ink/40" x-text="h"></div></template>
+            <template x-for="c in calDays" :key="c.ds">
+              <button @click="c.total && openDay(c.ds)" :disabled="!c.total"
+                class="relative flex min-h-[78px] flex-col items-start gap-1 bg-white p-2 text-left transition sm:min-h-[92px]"
+                :class="[!c.inMonth && 'opacity-40', c.total && 'hover:bg-surface', !c.work && 'bg-[repeating-linear-gradient(135deg,#fff,#fff_6px,#f4f5f7_6px,#f4f5f7_12px)]']"
+                :aria-label="fmtDay(c.ds) + (c.work ? (c.total ? ': ' + c.filled + ' dari ' + c.total + ' laporan terisi' : '') : ': libur')">
+                <span class="grid h-6 w-6 place-items-center text-xs tabular-nums" :class="c.today ? 'bg-navy font-semibold text-white' : c.work ? 'text-ink' : 'text-red-600'" x-text="c.day"></span>
+                <span x-show="c.libur" class="line-clamp-2 text-[10px] font-medium leading-tight text-red-600" x-text="c.libur"></span>
+                <template x-if="c.work && c.total">
+                  <div class="mt-auto w-full">
+                    <div class="h-1.5 w-full bg-surface"><div class="h-full" :class="c.filled === c.total ? 'bg-emerald-600' : 'bg-amber-500'" :style="`width:${c.filled / c.total * 100}%`"></div></div>
+                    <p class="mt-1 text-[10px] tabular-nums text-ink/50"><span x-text="c.filled"></span>/<span x-text="c.total"></span><i x-show="c.filled === c.total" class="fa-solid fa-check ml-1 text-emerald-600"></i></p>
+                  </div>
+                </template>
+                <span x-show="c.work && !c.total && c.future" class="mt-auto text-[10px] text-ink/30">terjadwal</span>
+              </button>
+            </template>
+          </div>
+          <div class="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-xs text-ink/60">
+            <span class="inline-flex items-center gap-1.5"><span class="h-2 w-4 bg-emerald-600"></span> Semua terisi</span>
+            <span class="inline-flex items-center gap-1.5"><span class="h-2 w-4 bg-amber-500"></span> Sebagian belum diisi</span>
+            <span class="inline-flex items-center gap-1.5"><span class="h-3 w-4 bg-[repeating-linear-gradient(135deg,#fff,#fff_2px,#e5e7eb_2px,#e5e7eb_4px)] ring-1 ring-black/10"></span> Bukan hari kerja / libur</span>
+            <span class="inline-flex items-center gap-1.5"><span class="grid h-4 w-4 place-items-center bg-navy text-[9px] text-white">5</span> Hari ini</span>
+          </div>
+        </div>
+
+        <div class="space-y-4 xl:col-span-4">
+          <div class="card p-5">
+            <h2 class="font-semibold">Pengaturan kalender kerja</h2>
+            <p class="label mt-4">Hari kerja</p>
+            <div class="grid grid-cols-7 gap-1">
+              <template x-for="i in [1, 2, 3, 4, 5, 6, 0]">
+                <button @click="toggleWorkday(i)" class="rounded-md py-2 text-xs font-medium transition" :class="db.kalender.hariKerja.includes(i) ? 'bg-navy text-white' : 'bg-surface text-ink/50 hover:text-ink'" :aria-pressed="db.kalender.hariKerja.includes(i)" x-text="['Min','Sen','Sel','Rab','Kam','Jum','Sab'][i]"></button>
+              </template>
+            </div>
+            <div class="mt-4 grid grid-cols-2 gap-3">
+              <label class="block"><span class="label">Jam generate</span><input type="time" x-model="db.kalender.jamGenerate" @change="save(true, 'Jam generate diubah ke ' + db.kalender.jamGenerate)" class="input"></label>
+              <label class="block"><span class="label">Generator</span>
+                <button type="button" @click="db.kalender.otomatis = !db.kalender.otomatis; save(true, 'Generator otomatis ' + (db.kalender.otomatis ? 'diaktifkan' : 'dinonaktifkan'))" class="btn w-full" :class="db.kalender.otomatis ? 'bg-emerald-600 text-white hover:bg-emerald-700' : 'btn-light'">
+                  <i class="fa-solid" :class="db.kalender.otomatis ? 'fa-toggle-on' : 'fa-toggle-off'"></i><span x-text="db.kalender.otomatis ? 'Otomatis' : 'Manual'"></span>
+                </button>
+              </label>
+            </div>
+          </div>
+
+          <div class="card p-5">
+            <h2 class="font-semibold">Hari libur</h2>
+            <p class="mt-1 text-xs text-ink/50">Libur nasional, cuti bersama &amp; libur perusahaan. Tanggal merah otomatis dilewati generator.</p>
+            <form @submit.prevent="addLibur()" class="mt-4 grid grid-cols-[1fr_auto] gap-2">
+              <input x-model="liburForm.tanggal" type="date" class="input col-span-2" aria-label="Tanggal libur">
+              <input x-model="liburForm.nama" class="input" placeholder="Nama hari libur" aria-label="Nama hari libur">
+              <button type="submit" class="btn-primary px-3" aria-label="Tambah hari libur"><i class="fa-solid fa-plus"></i></button>
+            </form>
+            <ul class="mt-4 divide-y divide-black/5">
+              <template x-for="l in upcomingLibur" :key="l.tanggal">
+                <li class="flex items-center gap-3 py-2.5 text-sm">
+                  <span class="w-20 shrink-0 text-xs tabular-nums text-red-600" x-text="fmtDate(l.tanggal)"></span>
+                  <span class="min-w-0 flex-1 truncate" x-text="l.nama"></span>
+                  <button @click="removeLibur(l)" class="btn-icon h-7 w-7 hover:!text-red-600" aria-label="Hapus hari libur"><i class="fa-regular fa-trash-can text-xs"></i></button>
+                </li>
+              </template>
+            </ul>
+            <p class="mt-3 text-[11px] leading-relaxed text-ink/40">Sudah terisi: libur nasional bertanggal tetap. Libur dengan tanggal berubah (Idulfitri, Iduladha, Nyepi, Waisak, Paskah, dll.) dan cuti bersama ditambahkan sesuai SKB pemerintah tiap tahun.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================ DOKUMEN & KONTRAK -->
+    <section x-show="route === 'dokumen'" class="space-y-6">
+      <div class="flex flex-wrap items-end justify-between gap-4">
+        <div><h1 class="display text-4xl">Dokumen &amp; <span class="text-navy">Kontrak</span></h1><p class="mt-2 text-sm text-ink/60">Surat kontrak, KTP, BPJS, sertifikat dan dokumen terkait karyawan.</p></div>
+        <button @click="openDoc()" class="btn-primary"><i class="fa-solid fa-upload text-xs"></i> Unggah Dokumen</button>
+      </div>
+      <div class="grid grid-cols-2 gap-4 lg:grid-cols-4">
+        <template x-for="s in docSummary" :key="s.s">
+          <button @click="docStatus = docStatus === s.s ? '' : s.s" class="card p-5 text-left transition" :class="docStatus === s.s && 'ring-2 ring-navy'">
+            <span class="badge" :class="s.cls"><i class="fa-solid" :class="s.icon"></i><span x-text="s.s"></span></span>
+            <p class="mt-3 text-3xl font-light tabular-nums" x-text="s.n"></p>
+          </button>
+        </template>
+      </div>
+      <div class="card flex flex-wrap gap-2 p-3">
+        <div class="relative min-w-[200px] flex-1"><i class="fa-solid fa-magnifying-glass pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-xs text-ink/40"></i><input x-model="docQ" type="search" placeholder="Cari dokumen atau nama karyawan…" class="input pl-9" aria-label="Cari dokumen"></div>
+        <select x-model="docJenis" class="input w-auto" aria-label="Jenis dokumen"><option value="">Semua jenis</option><template x-for="j in ['Surat Kontrak', 'KTP', 'BPJS', 'Sertifikat', 'Ijazah', 'NPWP', 'Lainnya']"><option x-text="j"></option></template></select>
+        <select x-model="docStatus" class="input w-auto" aria-label="Status dokumen"><option value="">Semua status</option><template x-for="s in docSummary"><option x-text="s.s"></option></template></select>
+      </div>
+      <div class="card overflow-x-auto">
+        <table class="w-full min-w-[860px] text-sm">
+          <thead class="border-b border-black/5"><tr><th class="th">Dokumen</th><th class="th">Jenis</th><th class="th">Karyawan</th><th class="th">Masa berlaku</th><th class="th">Status</th><th class="th text-right">Aksi</th></tr></thead>
+          <tbody class="divide-y divide-black/5">
+            <template x-for="d in filteredDocs" :key="d.key">
+              <tr class="hover:bg-surface/60">
+                <td class="td">
+                  <div class="flex items-center gap-3">
+                    <span class="grid h-9 w-9 shrink-0 place-items-center bg-surface text-navy"><i class="fa-regular" :class="d.kontrak ? 'fa-file-lines' : d.file?.type?.startsWith('image') ? 'fa-file-image' : 'fa-file-pdf'"></i></span>
+                    <span class="min-w-0"><span class="block truncate font-medium" x-text="d.nama"></span><span class="block truncate text-xs text-ink/50" x-text="d.file ? d.file.name + ' · ' + fmtSize(d.file.size) : 'Belum ada file'"></span></span>
+                  </div>
+                </td>
+                <td class="td text-ink/70" x-text="d.jenis"></td>
+                <td class="td"><button @click="openDetail(d.emp, 'dokumen')" class="hover:text-navy" x-text="d.emp.nama"></button></td>
+                <td class="td tabular-nums text-ink/70" x-text="d.berlaku ? fmtDate(d.berlaku) : '—'"></td>
+                <td class="td"><span class="badge" :class="docStatusOf(d.state).cls"><i class="fa-solid" :class="docStatusOf(d.state).icon"></i><span x-text="d.state"></span></span></td>
+                <td class="td whitespace-nowrap text-right">
+                  <button @click="openFile(d.file)" class="btn-icon" :disabled="!d.file" aria-label="Lihat file"><i class="fa-regular fa-eye"></i></button>
+                  <button @click="deleteDoc(d)" class="btn-icon hover:!text-red-600" aria-label="Hapus dokumen"><i class="fa-regular fa-trash-can"></i></button>
+                </td>
+              </tr>
+            </template>
+          </tbody>
+        </table>
+        <p x-show="!filteredDocs.length" class="p-10 text-center text-sm text-ink/50">Tidak ada dokumen.</p>
+      </div>
+    </section>
+
+    <!-- ============================================================ DIREKTORI KONTAK -->
+    <section x-show="route === 'kontak'" class="space-y-6">
+      <div class="flex flex-wrap items-end justify-between gap-4">
+        <div><h1 class="display text-4xl">Direktori <span class="text-navy">Kontak</span></h1><p class="mt-2 text-sm text-ink/60">Informasi kontak karyawan &amp; kontak darurat.</p></div>
+        <div class="relative w-full sm:w-80"><i class="fa-solid fa-magnifying-glass pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-xs text-ink/40"></i><input x-model="kontakQ" type="search" placeholder="Cari nama, unit, telepon…" class="input pl-9" aria-label="Cari kontak"></div>
+      </div>
+      <div class="grid grid-cols-1 gap-4 md:grid-cols-2 2xl:grid-cols-3">
+        <template x-for="e in contacts" :key="e.id">
+          <article class="card flex gap-4 p-5">
+            <div class="grid h-20 w-16 shrink-0 place-items-center overflow-hidden bg-navy text-lg font-light text-white"><img x-show="e.foto" :src="e.foto" class="h-full w-full object-cover" alt=""><span x-show="!e.foto" x-text="initials(e.nama)"></span></div>
+            <div class="min-w-0 flex-1">
+              <button @click="openDetail(e)" class="block truncate font-semibold hover:text-navy" x-text="e.nama"></button>
+              <p class="truncate text-xs text-ink/50" x-text="e.jabatan + ' · ' + unitById(e.unitId).nama"></p>
+              <ul class="mt-3 space-y-1 text-sm">
+                <li class="flex items-center gap-2"><i class="fa-solid fa-phone w-4 text-xs text-ink/30"></i><a :href="'tel:' + e.telp" class="hover:text-navy" x-text="e.telp"></a><a :href="waLink(e.telp)" target="_blank" rel="noopener" class="ml-auto text-emerald-600 hover:text-emerald-700" aria-label="WhatsApp"><i class="fa-brands fa-whatsapp"></i></a></li>
+                <li class="flex items-center gap-2"><i class="fa-solid fa-envelope w-4 text-xs text-ink/30"></i><a :href="'mailto:' + e.email" class="truncate hover:text-navy" x-text="e.email"></a></li>
+                <li class="flex items-start gap-2 text-ink/60"><i class="fa-solid fa-location-dot mt-1 w-4 text-xs text-ink/30"></i><span x-text="e.alamat"></span></li>
+              </ul>
+              <div class="mt-3 bg-surface px-3 py-2 text-xs">
+                <span class="font-medium text-red-700"><i class="fa-solid fa-truck-medical mr-1"></i> Darurat:</span>
+                <span x-text="e.kontakDarurat.nama || '—'"></span> <span class="text-ink/50" x-text="e.kontakDarurat.hubungan ? '(' + e.kontakDarurat.hubungan + ')' : ''"></span>
+                <a :href="'tel:' + e.kontakDarurat.telp" class="block font-medium hover:text-navy" x-text="e.kontakDarurat.telp"></a>
+              </div>
+            </div>
+          </article>
+        </template>
+      </div>
+    </section>
+
+    <!-- ============================================================ KONTEN: BERANDA -->
+    <section x-show="route === 'konten-beranda'" class="space-y-6">
+      <div class="flex flex-wrap items-end justify-between gap-4">
+        <div><h1 class="display text-4xl">Konten <span class="text-navy">Beranda</span></h1><p class="mt-2 text-sm text-ink/60">Ubah teks utama halaman beranda website.</p></div>
+        <div class="flex gap-2"><button @click="resetDraft()" class="btn-light">Batalkan</button><button @click="saveContent('beranda')" class="btn-primary"><i class="fa-solid fa-floppy-disk"></i> Simpan</button></div>
+      </div>
+      <div class="grid grid-cols-1 gap-4 xl:grid-cols-12">
+        <div class="card space-y-4 p-6 xl:col-span-7">
+          <label class="block"><span class="label">Judul utama</span><input x-model="draft.beranda.judul" class="input"></label>
+          <label class="block"><span class="label">Subjudul</span><input x-model="draft.beranda.subjudul" class="input"></label>
+          <label class="block"><span class="label">Deskripsi singkat</span><textarea x-model="draft.beranda.deskripsi" rows="3" class="input"></textarea></label>
+          <label class="block"><span class="label">Visi perusahaan</span><textarea x-model="draft.beranda.visi" rows="4" class="input"></textarea></label>
+          <div>
+            <span class="label">Angka statistik</span>
+            <div class="space-y-2">
+              <template x-for="(s, i) in draft.beranda.statistik" :key="i">
+                <div class="grid grid-cols-[6rem_1fr] gap-2"><input x-model="s.nilai" class="input" aria-label="Nilai"><input x-model="s.label" class="input" aria-label="Label"></div>
+              </template>
+            </div>
+          </div>
+        </div>
+        <div class="xl:col-span-5">
+          <p class="label">Pratinjau</p>
+          <div class="card p-8">
+            <span class="inline-flex items-center gap-2 bg-surface px-3 py-1 text-xs"><span class="h-1.5 w-1.5 rounded-full bg-sky"></span>Sejak 1996 · Timika, Papua</span>
+            <p class="display mt-5 text-4xl" x-text="draft.beranda.judul"></p>
+            <p class="mt-6 text-sm font-semibold" x-text="draft.beranda.subjudul"></p>
+            <p class="mt-2 text-sm text-ink/60" x-text="draft.beranda.deskripsi"></p>
+            <div class="mt-6 grid grid-cols-3 gap-2">
+              <template x-for="(s, i) in draft.beranda.statistik" :key="i"><div class="bg-surface p-3"><p class="text-2xl font-light" x-text="s.nilai"></p><p class="text-[11px] text-ink/50" x-text="s.label"></p></div></template>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================ KONTEN: LAYANAN -->
+    <section x-show="route === 'konten-layanan'" class="space-y-6">
+      <div class="flex flex-wrap items-end justify-between gap-4">
+        <div><h1 class="display text-4xl">Konten <span class="text-navy">Layanan</span></h1><p class="mt-2 text-sm text-ink/60">Tambah, ubah urutan dan atur tampilan layanan.</p></div>
+        <div class="flex gap-2"><button @click="addService()" class="btn-light"><i class="fa-solid fa-plus text-xs"></i> Layanan</button><button @click="resetDraft()" class="btn-light">Batalkan</button><button @click="saveContent('layanan')" class="btn-primary"><i class="fa-solid fa-floppy-disk"></i> Simpan</button></div>
+      </div>
+      <div class="space-y-3">
+        <template x-for="(s, i) in draft.layanan" :key="s.id">
+          <div class="card grid gap-4 p-5 lg:grid-cols-[auto_1fr_auto]" :class="!s.aktif && 'opacity-60'">
+            <div class="flex items-center gap-3 lg:flex-col">
+              <span class="grid h-12 w-12 place-items-center bg-surface text-xl text-navy"><i class="fa-solid" :class="s.ikon"></i></span>
+              <span class="text-xs tabular-nums text-ink/40" x-text="'0' + (i + 1)"></span>
+            </div>
+            <div class="grid gap-3 sm:grid-cols-[1fr_12rem]">
+              <label class="block"><span class="label">Judul</span><input x-model="s.judul" class="input"></label>
+              <label class="block"><span class="label">Ikon</span>
+                <select x-model="s.ikon" class="input"><template x-for="ic in ['fa-helmet-safety', 'fa-people-group', 'fa-gears', 'fa-boxes-stacked', 'fa-briefcase', 'fa-truck', 'fa-paint-roller', 'fa-road', 'fa-bus', 'fa-shield-halved']"><option :value="ic" x-text="ic.replace('fa-', '')"></option></template></select>
+              </label>
+              <label class="block sm:col-span-2"><span class="label">Deskripsi</span><textarea x-model="s.deskripsi" rows="2" class="input"></textarea></label>
+            </div>
+            <div class="flex items-start gap-1 lg:flex-col">
+              <label class="flex cursor-pointer items-center gap-2 px-2 py-1.5 text-xs"><input type="checkbox" x-model="s.aktif" class="h-4 w-4 rounded-none border-ink/30 text-navy focus:ring-navy"> Tampil</label>
+              <button @click="moveItem(draft.layanan, i, -1)" class="btn-icon" aria-label="Naikkan"><i class="fa-solid fa-arrow-up"></i></button>
+              <button @click="moveItem(draft.layanan, i, 1)" class="btn-icon" aria-label="Turunkan"><i class="fa-solid fa-arrow-down"></i></button>
+              <button @click="draft.layanan.splice(i, 1)" class="btn-icon hover:!text-red-600" aria-label="Hapus layanan"><i class="fa-regular fa-trash-can"></i></button>
+            </div>
+          </div>
+        </template>
+      </div>
+    </section>
+
+    <!-- ============================================================ KONTEN: GALERI -->
+    <section x-show="route === 'konten-galeri'" class="space-y-6">
+      <div class="flex flex-wrap items-end justify-between gap-4">
+        <div><h1 class="display text-4xl">Galeri <span class="text-navy">Proyek</span></h1><p class="mt-2 text-sm text-ink/60"><span x-text="draft.galeri.filter(g => g.tampil).length"></span> dari <span x-text="draft.galeri.length"></span> foto ditampilkan di website.</p></div>
+        <div class="flex gap-2">
+          <label class="btn-light cursor-pointer"><i class="fa-solid fa-upload text-xs"></i> Unggah Foto<input type="file" accept="image/*" multiple class="sr-only" @change="addGallery($event)"></label>
+          <button @click="resetDraft()" class="btn-light">Batalkan</button>
+          <button @click="saveContent('galeri')" class="btn-primary"><i class="fa-solid fa-floppy-disk"></i> Simpan</button>
+        </div>
+      </div>
+      <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        <template x-for="(g, i) in draft.galeri" :key="g.id">
+          <div class="card" :class="!g.tampil && 'opacity-60'">
+            <div class="relative aspect-[4/3] overflow-hidden bg-surface">
+              <img :src="g.gambar" :alt="g.judul" class="h-full w-full object-cover">
+              <span x-show="!g.tampil" class="absolute left-3 top-3 bg-ink px-2 py-0.5 text-[11px] text-white">Disembunyikan</span>
+            </div>
+            <div class="space-y-3 p-4">
+              <input x-model="g.judul" class="input" aria-label="Judul foto">
+              <div class="flex items-center gap-2">
+                <select x-model="g.kategori" class="input flex-1" aria-label="Kategori"><template x-for="k in ['Scaffolding & Painting', 'Carpenter & Mason', 'Labor Supplier', 'Rental Bus', 'Konstruksi']"><option x-text="k"></option></template></select>
+                <button @click="g.tampil = !g.tampil" class="btn-icon" :aria-label="g.tampil ? 'Sembunyikan' : 'Tampilkan'"><i class="fa-regular" :class="g.tampil ? 'fa-eye' : 'fa-eye-slash'"></i></button>
+                <button @click="draft.galeri.splice(i, 1)" class="btn-icon hover:!text-red-600" aria-label="Hapus foto"><i class="fa-regular fa-trash-can"></i></button>
+              </div>
+            </div>
+          </div>
+        </template>
+      </div>
+    </section>
+
+    <!-- ============================================================ KONTEN: KONTAK -->
+    <section x-show="route === 'konten-kontak'" class="space-y-6">
+      <div class="flex flex-wrap items-end justify-between gap-4">
+        <div><h1 class="display text-4xl">Kontak &amp; <span class="text-navy">Sosmed</span></h1><p class="mt-2 text-sm text-ink/60">Informasi kontak perusahaan, peta dan link media sosial di website.</p></div>
+        <div class="flex gap-2"><button @click="resetDraft()" class="btn-light">Batalkan</button><button @click="saveContent('kontak')" class="btn-primary"><i class="fa-solid fa-floppy-disk"></i> Simpan</button></div>
+      </div>
+      <div class="grid grid-cols-1 gap-4 xl:grid-cols-2">
+        <div class="card space-y-4 p-6">
+          <label class="block"><span class="label">Alamat kantor</span><textarea x-model="draft.kontak.alamat" rows="2" class="input"></textarea></label>
+          <div class="grid gap-4 sm:grid-cols-2">
+            <label class="block"><span class="label">Telepon</span><input x-model="draft.kontak.telp" class="input"></label>
+            <label class="block"><span class="label">Email</span><input x-model="draft.kontak.email" type="email" class="input"></label>
+          </div>
+          <label class="block"><span class="label">URL embed Google Maps</span><input x-model="draft.kontak.maps" class="input font-mono text-xs"></label>
+          <div class="grid gap-4 border-t border-black/5 pt-4 sm:grid-cols-2">
+            <template x-for="s in [['instagram', 'fa-instagram', 'Instagram'], ['facebook', 'fa-facebook-f', 'Facebook'], ['youtube', 'fa-youtube', 'YouTube'], ['whatsapp', 'fa-whatsapp', 'WhatsApp Channel']]">
+              <label class="block"><span class="label"><i class="fa-brands mr-1" :class="s[1]"></i><span x-text="s[2]"></span></span><input x-model="draft.kontak[s[0]]" class="input" placeholder="https://"></label>
+            </template>
+          </div>
+        </div>
+        <div class="card p-2"><iframe title="Pratinjau peta" :src="draft.kontak.maps" class="h-full min-h-[380px] w-full" style="border:0" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe></div>
+      </div>
+    </section>
+
+    <!-- ============================================================ PENGATURAN -->
+    <section x-show="route === 'pengaturan'" class="space-y-6">
+      <h1 class="display text-4xl">Pengaturan</h1>
+      <div class="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <div class="card p-6">
+          <h2 class="font-semibold">Akun administrator</h2>
+          <dl class="mt-4 divide-y divide-black/5 text-sm">
+            <div class="flex justify-between py-2.5"><dt class="text-ink/50">Nama</dt><dd x-text="session.nama"></dd></div>
+            <div class="flex justify-between py-2.5"><dt class="text-ink/50">Email</dt><dd x-text="session.email"></dd></div>
+            <div class="flex justify-between py-2.5"><dt class="text-ink/50">Peran</dt><dd x-text="session.role"></dd></div>
+            <div class="flex justify-between py-2.5"><dt class="text-ink/50">Ukuran database</dt><dd class="tabular-nums" x-text="storageUsed"></dd></div>
+          </dl>
+          <button @click="logout()" class="btn-light mt-4"><i class="fa-solid fa-right-from-bracket"></i> Keluar</button>
+        </div>
+        <div class="card p-6">
+          <h2 class="font-semibold">Backup &amp; pemulihan data</h2>
+          <p class="mt-1 text-sm text-ink/60">Unduh seluruh database sebagai file JSON, atau pulihkan dari file backup.</p>
+          <div class="mt-4 flex flex-wrap gap-2">
+            <button @click="exportBackup()" class="btn-dark"><i class="fa-solid fa-download"></i> Unduh Backup</button>
+            <label class="btn-light cursor-pointer"><i class="fa-solid fa-upload"></i> Pulihkan<input type="file" accept="application/json" class="sr-only" @change="importBackup($event)"></label>
+          </div>
+          <div class="mt-6 border-t border-black/5 pt-4">
+            <h3 class="text-sm font-semibold text-red-700">Reset data demo</h3>
+            <p class="mt-1 text-sm text-ink/60">Kembalikan seluruh data ke kondisi awal simulasi.</p>
+            <button @click="resetDemo()" class="btn-danger mt-3"><i class="fa-solid fa-rotate-left"></i> Reset Data</button>
+          </div>
+        </div>
+        <div class="border-l-4 border-sky bg-white p-6 lg:col-span-2">
+          <h2 class="font-semibold"><i class="fa-solid fa-flask mr-2 text-sky"></i>Tentang simulasi ini</h2>
+          <p class="mt-2 text-sm leading-relaxed text-ink/70">Panel ini adalah <b>prototipe interaktif</b>. Data disimpan di browser (localStorage), sehingga hanya terlihat di perangkat ini. Data karyawan, laporan dan dokumen adalah <b>data contoh</b>. Pada implementasi produksi (Paket 2 / Paket 3 Nokensoft), data disimpan di server dengan database, login multi-pengguna dengan hak akses (admin, HR, pengawas), unggah file ke storage server, notifikasi kontrak via email, dan konten website terhubung langsung ke halaman publik.</p>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<!-- =============================================================== DRAWER DETAIL KARYAWAN -->
+<div x-show="detail" x-transition.opacity class="fixed inset-0 z-50 bg-ink/40" @click="detail = null"></div>
+<aside x-show="detail" x-transition:enter="transition duration-200" x-transition:enter-start="translate-x-full" x-transition:leave="transition duration-150" x-transition:leave-end="translate-x-full"
+  @keydown.escape.window="detail = null" class="fixed inset-y-0 right-0 z-50 flex w-full max-w-2xl flex-col bg-surface shadow-2xl" role="dialog" aria-modal="true" aria-label="Detail karyawan">
+  <template x-if="detail">
+    <div class="flex h-full flex-col">
+      <div class="flex items-start gap-5 bg-white p-6">
+        <div class="relative aspect-[4/5] w-24 shrink-0 overflow-hidden bg-navy">
+          <img x-show="detail.foto" :src="detail.foto" :alt="detail.nama" class="h-full w-full object-cover">
+          <span x-show="!detail.foto" class="absolute inset-0 grid place-items-center text-3xl font-light text-white/80" x-text="initials(detail.nama)"></span>
+        </div>
+        <div class="min-w-0 flex-1">
+          <span class="badge" :class="empSt(detail.status).cls"><i class="fa-solid" :class="empSt(detail.status).icon"></i><span x-text="detail.status"></span></span>
+          <h2 class="mt-2 text-2xl font-semibold tracking-tight" x-text="detail.nama"></h2>
+          <p class="text-sm text-ink/60" x-text="detail.jabatan + ' · ' + unitById(detail.unitId).nama"></p>
+          <p class="mt-1 text-xs text-ink/40"><span x-text="detail.nik"></span> · bergabung <span x-text="fmtDate(detail.tglMasuk)"></span> (<span x-text="tenure(detail.tglMasuk)"></span>)</p>
+          <div class="mt-4 flex flex-wrap gap-2">
+            <button @click="openEmp(detail)" class="btn-light py-1.5"><i class="fa-regular fa-pen-to-square"></i> Ubah</button>
+            <button @click="openReport(null, detail.id)" class="btn-light py-1.5"><i class="fa-solid fa-plus text-xs"></i> Laporan</button>
+            <a :href="waLink(detail.telp)" target="_blank" rel="noopener" class="btn-light py-1.5"><i class="fa-brands fa-whatsapp text-emerald-600"></i> WhatsApp</a>
+          </div>
+        </div>
+        <button @click="detail = null" class="btn-icon" aria-label="Tutup"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <nav class="flex gap-6 overflow-x-auto border-b border-black/5 bg-white px-6" role="tablist">
+        <template x-for="t in [['profil', 'Profil'], ['kinerja', 'Kinerja'], ['laporan', 'Daily Report'], ['dokumen', 'Dokumen & Kontrak']]">
+          <button role="tab" @click="detailTab = t[0]" class="tab" :class="detailTab === t[0] && 'is-active'" :aria-selected="detailTab === t[0]" x-text="t[1]"></button>
+        </template>
+      </nav>
+      <div class="flex-1 overflow-y-auto p-6">
+        <!-- Profil -->
+        <div x-show="detailTab === 'profil'" class="space-y-4">
+          <div class="card p-5">
+            <h3 class="text-xs font-semibold uppercase tracking-wider text-ink/40">Data pribadi</h3>
+            <dl class="mt-3 grid gap-x-6 gap-y-3 text-sm sm:grid-cols-2">
+              <div><dt class="text-xs text-ink/50">Jenis kelamin</dt><dd x-text="detail.jk === 'L' ? 'Laki-laki' : 'Perempuan'"></dd></div>
+              <div><dt class="text-xs text-ink/50">Tempat, tanggal lahir</dt><dd x-text="(detail.tempatLahir || '—') + ', ' + fmtDate(detail.tglLahir) + ' (' + age(detail.tglLahir) + ')'"></dd></div>
+              <div><dt class="text-xs text-ink/50">Orang Asli Papua</dt><dd x-text="detail.oap ? 'Ya' : 'Tidak'"></dd></div>
+              <div><dt class="text-xs text-ink/50">Unit kerja</dt><dd x-text="unitById(detail.unitId).nama"></dd></div>
+            </dl>
+          </div>
+          <div class="card p-5">
+            <h3 class="text-xs font-semibold uppercase tracking-wider text-ink/40">Informasi kontak</h3>
+            <dl class="mt-3 grid gap-x-6 gap-y-3 text-sm sm:grid-cols-2">
+              <div><dt class="text-xs text-ink/50">Telepon</dt><dd><a :href="'tel:' + detail.telp" class="hover:text-navy" x-text="detail.telp || '—'"></a></dd></div>
+              <div><dt class="text-xs text-ink/50">Email</dt><dd class="break-all"><a :href="'mailto:' + detail.email" class="hover:text-navy" x-text="detail.email || '—'"></a></dd></div>
+              <div class="sm:col-span-2"><dt class="text-xs text-ink/50">Alamat</dt><dd x-text="detail.alamat || '—'"></dd></div>
+              <div class="sm:col-span-2 bg-surface p-3"><dt class="text-xs font-medium text-red-700"><i class="fa-solid fa-truck-medical mr-1"></i> Kontak darurat</dt><dd class="mt-1"><span x-text="detail.kontakDarurat.nama || '—'"></span> <span class="text-ink/50" x-text="detail.kontakDarurat.hubungan ? '(' + detail.kontakDarurat.hubungan + ')' : ''"></span> · <a :href="'tel:' + detail.kontakDarurat.telp" class="hover:text-navy" x-text="detail.kontakDarurat.telp"></a></dd></div>
+            </dl>
+          </div>
+        </div>
+
+        <!-- Kinerja -->
+        <div x-show="detailTab === 'kinerja'" class="space-y-4" x-data="{ get k() { return kpi(detail) } }">
+          <div class="grid grid-cols-2 gap-3 sm:grid-cols-5">
+            <div class="card col-span-2 bg-navy p-4 text-white ring-0 sm:col-span-1"><p class="text-xs text-white/60">Skor KPI</p><p class="text-4xl font-light tabular-nums" x-text="k.skor"></p></div>
+            <template x-for="m in [['Kehadiran', 'hadir'], ['Produktivitas', 'prod'], ['Kualitas', 'kual'], ['K3', 'k3']]">
+              <div class="card p-4"><p class="text-xs text-ink/50" x-text="m[0]"></p><p class="text-2xl font-light tabular-nums" x-text="k[m[1]]"></p></div>
+            </template>
+          </div>
+          <div class="card p-5">
+            <div class="flex items-center justify-between"><h3 class="text-sm font-semibold">Progres harian · 14 hari</h3><span class="badge" :class="grade(k.skor).cls"><i class="fa-solid" :class="grade(k.skor).icon"></i><span x-text="grade(k.skor).label"></span></span></div>
+            <div class="relative mt-5 h-36">
+              <template x-for="g in [1, 0.5, 0]"><div class="absolute left-7 right-0 border-t border-ink/10" :class="g ? 'border-dashed' : ''" :style="`bottom:${g * 100}%`"><span class="absolute -left-7 w-5 -translate-y-1/2 text-right text-[10px] text-ink/40" x-text="g * 100"></span></div></template>
+              <div class="absolute inset-y-0 left-7 right-0 flex items-end gap-[2px]">
+                <template x-for="c in empTrend(detail)" :key="c.d">
+                  <div class="group flex h-full flex-1 items-end justify-center" @mouseenter="showTip($event, fmtDay(c.d), c.v === null ? c.note : 'Progres ' + c.v + '%')" @mouseleave="hideTip()">
+                    <div data-bar x-show="c.v !== null" class="w-full max-w-[22px] rounded-t-[3px] bg-navy group-hover:bg-sky" :style="`height:${c.v}%`"></div>
+                    <div x-show="c.v === null && c.miss" class="h-px w-full max-w-[22px] border-t border-dashed border-red-400"></div>
+                    <div x-show="c.v === null && !c.sunday && !c.miss" class="h-px w-full max-w-[22px] border-t border-dashed border-amber-500"></div>
+                  </div>
+                </template>
+              </div>
+            </div>
+            <p class="mt-3 text-xs text-ink/50"><span class="mr-1 inline-block w-4 border-t border-dashed border-red-400 align-middle"></span> alpa / belum diisi · <span class="mx-1 inline-block w-4 border-t border-dashed border-amber-500 align-middle"></span> izin/sakit/cuti · <span x-text="k.n"></span> hari hadir, <span x-text="k.jam"></span> jam kerja dalam <span x-text="period"></span> hari · <span x-text="k.insiden"></span> insiden, <span x-text="k.nearmiss"></span> near miss</p>
+          </div>
+        </div>
+
+        <!-- Laporan -->
+        <div x-show="detailTab === 'laporan'" class="card divide-y divide-black/5">
+          <template x-for="r in empReports(detail).slice(0, 30)" :key="r.id">
+            <div class="flex items-start gap-3 p-4">
+              <div class="w-16 shrink-0 text-xs text-ink/50" x-text="fmtDay(r.tanggal)"></div>
+              <div class="min-w-0 flex-1">
+                <template x-if="r.draft"><p class="text-sm font-medium text-amber-800"><i class="fa-regular fa-hourglass-half mr-1"></i> Belum diisi</p></template>
+                <template x-if="!r.draft && r.kehadiran !== 'Hadir'"><p class="text-sm"><span class="badge" :class="kehadiranOf(r.kehadiran).cls"><i class="fa-solid" :class="kehadiranOf(r.kehadiran).icon"></i><span x-text="r.kehadiran"></span></span> <span class="ml-1 text-xs italic text-ink/50" x-text="r.catatan"></span></p></template>
+                <template x-if="!r.draft && r.kehadiran === 'Hadir'">
+                  <div>
+                    <p class="text-sm font-medium" x-text="r.kegiatan"></p>
+                    <p class="text-xs text-ink/50"><span x-text="r.lokasi"></span> · <span x-text="r.jam"></span> jam · progres <span x-text="r.progress"></span>% · <span :class="k3Status(r.k3).cls" x-text="r.k3"></span></p>
+                    <p x-show="r.catatan" class="mt-1 text-xs italic text-ink/50" x-text="r.catatan"></p>
+                  </div>
+                </template>
+              </div>
+              <span x-show="!r.draft && r.kehadiran === 'Hadir'" class="badge" :class="repSt(r.status)?.cls" x-text="r.status"></span>
+              <button @click="openReport(r)" class="btn-icon" :aria-label="r.draft ? 'Isi laporan' : 'Ubah laporan'"><i :class="r.draft ? 'fa-solid fa-pen text-navy' : 'fa-regular fa-pen-to-square'"></i></button>
+            </div>
+          </template>
+          <p x-show="!empReports(detail).length" class="p-8 text-center text-sm text-ink/50">Belum ada laporan harian.</p>
+        </div>
+
+        <!-- Dokumen -->
+        <div x-show="detailTab === 'dokumen'" class="space-y-4">
+          <div class="card p-5">
+            <div class="flex items-start justify-between gap-3">
+              <div>
+                <h3 class="text-xs font-semibold uppercase tracking-wider text-ink/40">Surat kontrak kerja</h3>
+                <p class="mt-2 font-medium" x-text="detail.kontrak.jenis + ' · ' + (detail.kontrak.nomor || 'tanpa nomor')"></p>
+                <p class="text-sm text-ink/60"><span x-text="fmtDate(detail.kontrak.mulai)"></span> — <span x-text="detail.kontrak.selesai ? fmtDate(detail.kontrak.selesai) : 'tidak terbatas (karyawan tetap)'"></span></p>
+              </div>
+              <span class="badge" :class="docStatusOf(docState(detail.kontrak.selesai)).cls"><i class="fa-solid" :class="docStatusOf(docState(detail.kontrak.selesai)).icon"></i><span x-text="docState(detail.kontrak.selesai)"></span></span>
+            </div>
+            <button x-show="detail.kontrak.file" @click="openFile(detail.kontrak.file)" class="mt-4 flex w-full items-center gap-3 bg-surface p-3 text-left text-sm hover:bg-black/5">
+              <i class="fa-regular fa-file-pdf text-lg text-red-600"></i><span class="min-w-0 flex-1 truncate" x-text="detail.kontrak.file?.name"></span><span class="text-xs text-ink/50" x-text="fmtSize(detail.kontrak.file?.size)"></span>
+            </button>
+          </div>
+          <div class="card divide-y divide-black/5">
+            <template x-for="d in detail.dokumen" :key="d.id">
+              <div class="flex items-center gap-3 p-4">
+                <span class="grid h-9 w-9 shrink-0 place-items-center bg-surface text-navy"><i class="fa-regular fa-file-lines"></i></span>
+                <div class="min-w-0 flex-1"><p class="truncate text-sm font-medium" x-text="d.nama"></p><p class="text-xs text-ink/50"><span x-text="d.jenis"></span><span x-show="d.berlaku"> · berlaku s/d <span x-text="fmtDate(d.berlaku)"></span></span></p></div>
+                <span class="badge" :class="docStatusOf(docState(d.berlaku)).cls" x-text="docState(d.berlaku)"></span>
+                <button @click="openFile(d.file)" class="btn-icon" aria-label="Lihat file"><i class="fa-regular fa-eye"></i></button>
+              </div>
+            </template>
+            <p x-show="!detail.dokumen.length" class="p-6 text-center text-sm text-ink/50">Belum ada dokumen.</p>
+          </div>
+          <button @click="openEmp(detail); empTab = 'dokumen'" class="btn-light"><i class="fa-solid fa-paperclip"></i> Kelola dokumen</button>
+        </div>
+      </div>
+      <div class="flex justify-between border-t border-black/5 bg-white p-4">
+        <button @click="deleteEmp(detail)" class="btn text-red-600 hover:bg-red-50"><i class="fa-regular fa-trash-can"></i> Hapus karyawan</button>
+        <button @click="detail = null" class="btn-light">Tutup</button>
+      </div>
+    </div>
+  </template>
+</aside>
+
+<!-- =============================================================== MODAL: FORM KARYAWAN -->
+<div x-show="empModal" x-transition.opacity class="fixed inset-0 z-[60] flex items-start justify-center overflow-y-auto bg-ink/50 p-4 sm:p-8" @keydown.escape.window="empModal = false">
+  <template x-if="empForm">
+    <form @submit.prevent="saveEmp()" class="w-full max-w-3xl bg-white shadow-2xl" x-trap.noscroll="empModal" role="dialog" aria-modal="true" aria-labelledby="emp-title">
+      <div class="flex items-center justify-between border-b border-black/5 px-6 py-4">
+        <h2 id="emp-title" class="text-lg font-semibold" x-text="empForm.id ? 'Ubah Data Karyawan' : 'Tambah Karyawan'"></h2>
+        <button type="button" @click="empModal = false" class="btn-icon" aria-label="Tutup"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <nav class="flex gap-6 overflow-x-auto border-b border-black/5 px-6 pt-3" role="tablist">
+        <template x-for="t in [['pribadi', 'Data Pribadi'], ['pekerjaan', 'Pekerjaan'], ['kontak', 'Kontak'], ['kontrak', 'Surat Kontrak'], ['dokumen', 'Dokumen']]">
+          <button type="button" role="tab" @click="empTab = t[0]" class="tab" :class="empTab === t[0] && 'is-active'" x-text="t[1]"></button>
+        </template>
+      </nav>
+      <div class="max-h-[65vh] overflow-y-auto p-6">
+        <div x-show="empTab === 'pribadi'" class="grid gap-6 sm:grid-cols-[9rem_1fr]">
+          <div>
+            <span class="label">Foto profil (4:5)</span>
+            <div class="relative aspect-[4/5] w-36 overflow-hidden bg-surface">
+              <img x-show="empForm.foto" :src="empForm.foto" alt="Foto profil" class="h-full w-full object-cover">
+              <span x-show="!empForm.foto" class="absolute inset-0 grid place-items-center text-ink/30"><i class="fa-regular fa-user text-4xl"></i></span>
+            </div>
+            <div class="mt-2 flex gap-1">
+              <label class="btn-light flex-1 cursor-pointer px-2 py-1.5 text-xs"><i class="fa-solid fa-camera"></i> Unggah<input type="file" accept="image/*" class="sr-only" @change="uploadPhoto($event)"></label>
+              <button type="button" x-show="empForm.foto" @click="empForm.foto = null" class="btn-icon" aria-label="Hapus foto"><i class="fa-regular fa-trash-can"></i></button>
+            </div>
+          </div>
+          <div class="grid content-start gap-4 sm:grid-cols-2">
+            <label class="block sm:col-span-2"><span class="label">Nama lengkap *</span><input x-model="empForm.nama" required class="input"></label>
+            <label class="block"><span class="label">NIK karyawan</span><input x-model="empForm.nik" class="input font-mono"></label>
+            <label class="block"><span class="label">Jenis kelamin</span><select x-model="empForm.jk" class="input"><option value="L">Laki-laki</option><option value="P">Perempuan</option></select></label>
+            <label class="block"><span class="label">Tempat lahir</span><input x-model="empForm.tempatLahir" class="input"></label>
+            <label class="block"><span class="label">Tanggal lahir</span><input x-model="empForm.tglLahir" type="date" class="input"></label>
+            <label class="flex items-center gap-2 text-sm sm:col-span-2"><input type="checkbox" x-model="empForm.oap" class="h-4 w-4 rounded-none border-ink/30 text-navy focus:ring-navy"> Orang Asli Papua (OAP)</label>
+          </div>
+        </div>
+        <div x-show="empTab === 'pekerjaan'" class="grid gap-4 sm:grid-cols-2">
+          <label class="block"><span class="label">Unit kerja *</span><select x-model="empForm.unitId" class="input"><template x-for="u in db.units" :key="u.id"><option :value="u.id" x-text="u.nama" :selected="u.id === empForm.unitId"></option></template></select></label>
+          <label class="block"><span class="label">Jabatan</span><input x-model="empForm.jabatan" class="input"></label>
+          <label class="block"><span class="label">Status</span><select x-model="empForm.status" class="input"><option>Aktif</option><option>Cuti</option><option>Kontrak Berakhir</option><option>Nonaktif</option></select></label>
+          <label class="block"><span class="label">Tanggal masuk</span><input x-model="empForm.tglMasuk" type="date" class="input"></label>
+        </div>
+        <div x-show="empTab === 'kontak'" class="grid gap-4 sm:grid-cols-2">
+          <label class="block"><span class="label">Telepon / WhatsApp</span><input x-model="empForm.telp" type="tel" class="input"></label>
+          <label class="block"><span class="label">Email</span><input x-model="empForm.email" type="email" class="input"></label>
+          <label class="block sm:col-span-2"><span class="label">Alamat</span><textarea x-model="empForm.alamat" rows="2" class="input"></textarea></label>
+          <p class="pt-2 text-xs font-semibold uppercase tracking-wider text-red-700 sm:col-span-2">Kontak darurat</p>
+          <label class="block"><span class="label">Nama</span><input x-model="empForm.kontakDarurat.nama" class="input"></label>
+          <label class="block"><span class="label">Hubungan</span><input x-model="empForm.kontakDarurat.hubungan" class="input" placeholder="Istri / Orang tua / …"></label>
+          <label class="block"><span class="label">Telepon</span><input x-model="empForm.kontakDarurat.telp" type="tel" class="input"></label>
+        </div>
+        <div x-show="empTab === 'kontrak'" class="grid gap-4 sm:grid-cols-2">
+          <label class="block"><span class="label">Nomor kontrak</span><input x-model="empForm.kontrak.nomor" class="input font-mono"></label>
+          <label class="block"><span class="label">Jenis kontrak</span><select x-model="empForm.kontrak.jenis" class="input"><option value="PKWT">PKWT (kontrak)</option><option value="PKWTT">PKWTT (tetap)</option><option value="Harian">Harian lepas</option></select></label>
+          <label class="block"><span class="label">Tanggal mulai</span><input x-model="empForm.kontrak.mulai" type="date" class="input"></label>
+          <label class="block"><span class="label">Tanggal berakhir</span><input x-model="empForm.kontrak.selesai" type="date" class="input" :disabled="empForm.kontrak.jenis === 'PKWTT'"></label>
+          <div class="sm:col-span-2">
+            <span class="label">File surat kontrak (PDF / gambar)</span>
+            <div class="flex items-center gap-3 border border-dashed border-ink/20 p-4">
+              <i class="fa-regular fa-file-pdf text-2xl text-red-600"></i>
+              <div class="min-w-0 flex-1 text-sm"><p class="truncate" x-text="empForm.kontrak.file ? empForm.kontrak.file.name : 'Belum ada file'"></p><p class="text-xs text-ink/50" x-text="empForm.kontrak.file ? fmtSize(empForm.kontrak.file.size) : 'Maks. 400 KB tersimpan penuh pada simulasi'"></p></div>
+              <label class="btn-light cursor-pointer py-1.5 text-xs"><i class="fa-solid fa-upload"></i> Pilih file<input type="file" accept=".pdf,image/*" class="sr-only" @change="attachContract($event)"></label>
+            </div>
+          </div>
+        </div>
+        <div x-show="empTab === 'dokumen'" class="space-y-3">
+          <template x-for="(d, i) in empForm.dokumen" :key="d.id">
+            <div class="grid gap-3 bg-surface p-4 sm:grid-cols-[8rem_1fr_9rem_auto]">
+              <select x-model="d.jenis" class="input" aria-label="Jenis"><template x-for="j in ['KTP', 'BPJS', 'Sertifikat', 'Ijazah', 'NPWP', 'Lainnya']"><option x-text="j" :selected="j === d.jenis"></option></template></select>
+              <input x-model="d.nama" class="input" placeholder="Nama dokumen" aria-label="Nama dokumen">
+              <input x-model="d.berlaku" type="date" class="input" title="Berlaku sampai" aria-label="Berlaku sampai">
+              <div class="flex items-center gap-1">
+                <label class="btn-icon cursor-pointer" :title="d.file ? d.file.name : 'Lampirkan file'"><i class="fa-solid fa-paperclip" :class="d.file && 'text-navy'"></i><input type="file" class="sr-only" @change="attachEmpDoc($event, d)"></label>
+                <button type="button" @click="empForm.dokumen.splice(i, 1)" class="btn-icon hover:!text-red-600" aria-label="Hapus dokumen"><i class="fa-regular fa-trash-can"></i></button>
+              </div>
+              <p x-show="d.file" class="text-xs text-ink/50 sm:col-span-4"><i class="fa-solid fa-paperclip mr-1"></i><span x-text="d.file?.name + ' · ' + fmtSize(d.file?.size)"></span></p>
+            </div>
+          </template>
+          <button type="button" @click="addEmpDoc()" class="btn-light"><i class="fa-solid fa-plus text-xs"></i> Tambah dokumen</button>
+        </div>
+      </div>
+      <div class="flex justify-end gap-2 border-t border-black/5 px-6 py-4">
+        <button type="button" @click="empModal = false" class="btn-light">Batal</button>
+        <button type="submit" class="btn-primary"><i class="fa-solid fa-floppy-disk"></i> Simpan</button>
+      </div>
+    </form>
+  </template>
+</div>
+
+<!-- =============================================================== MODAL: DAILY REPORT -->
+<div x-show="repModal" x-transition.opacity class="fixed inset-0 z-[60] flex items-start justify-center overflow-y-auto bg-ink/50 p-4 sm:p-8" @keydown.escape.window="repModal = false">
+  <template x-if="repForm">
+    <form @submit.prevent="saveReport()" class="w-full max-w-2xl bg-white shadow-2xl" x-trap.noscroll="repModal" role="dialog" aria-modal="true" aria-labelledby="rep-title">
+      <div class="flex items-start justify-between border-b border-black/5 px-6 py-4">
+        <div>
+          <h2 id="rep-title" class="text-lg font-semibold" x-text="repForm.draft ? 'Isi Daily Report' : repForm.id ? 'Ubah Daily Report' : 'Laporan Manual'"></h2>
+          <p x-show="repForm.id" class="text-xs text-ink/50"><span x-text="empById(repForm.empId).nama"></span> · <span x-text="fmtDay(repForm.tanggal)"></span><span x-show="repForm.auto"> · <i class="fa-solid fa-robot"></i> dibuat otomatis</span></p>
+          <p x-show="!repForm.id" class="text-xs text-ink/50">Untuk lembur di hari libur atau karyawan yang belum punya draft.</p>
+        </div>
+        <button type="button" @click="repModal = false" class="btn-icon" aria-label="Tutup"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="grid gap-4 p-6 sm:grid-cols-2">
+        <template x-if="!repForm.id">
+          <label class="block"><span class="label">Tanggal</span><input x-model="repForm.tanggal" type="date" required class="input"></label>
+        </template>
+        <template x-if="!repForm.id">
+          <label class="block"><span class="label">Karyawan *</span><select x-model="repForm.empId" class="input"><template x-for="e in monitoredEmps" :key="e.id"><option :value="e.id" x-text="e.nama + ' — ' + unitById(e.unitId).kode" :selected="e.id === repForm.empId"></option></template></select></label>
+        </template>
+        <div class="sm:col-span-2">
+          <span class="label">Kehadiran</span>
+          <div class="grid grid-cols-5 gap-1" role="radiogroup" aria-label="Kehadiran">
+            <template x-for="k in ['Hadir', 'Izin', 'Sakit', 'Cuti', 'Alpa']">
+              <button type="button" role="radio" :aria-checked="repForm.kehadiran === k" @click="repForm.kehadiran = k" class="rounded-md py-2 text-xs font-medium ring-1 ring-inset transition sm:text-sm"
+                :class="repForm.kehadiran === k ? 'bg-navy text-white ring-navy' : 'bg-white text-ink/60 ring-black/10 hover:bg-surface'">
+                <i class="fa-solid mr-1 hidden sm:inline" :class="kehadiranOf(k).icon"></i><span x-text="k"></span>
+              </button>
+            </template>
+          </div>
+        </div>
+        <template x-if="repForm.kehadiran === 'Hadir'">
+          <div class="grid gap-4 sm:col-span-2 sm:grid-cols-2">
+            <label class="block sm:col-span-2"><span class="label">Kegiatan *</span>
+              <input x-model="repForm.kegiatan" list="kegiatan-list" class="input" placeholder="Pilih atau ketik kegiatan">
+              <datalist id="kegiatan-list"><template x-for="k in unitById(empById(repForm.empId).unitId).kegiatan"><option :value="k"></option></template></datalist>
+            </label>
+            <label class="block"><span class="label">Lokasi</span><input x-model="repForm.lokasi" class="input" placeholder="Kuala Kencana, Tembagapura…"></label>
+            <label class="block"><span class="label">Jam kerja</span><input x-model="repForm.jam" type="number" min="0" max="16" step="0.5" class="input"></label>
+            <label class="block sm:col-span-2"><span class="label">Progres pekerjaan: <b class="text-ink" x-text="repForm.progress + '%'"></b></span><input x-model="repForm.progress" type="range" min="0" max="100" step="5" class="w-full accent-[#0E3A78]"></label>
+            <div>
+              <span class="label">Nilai kualitas</span>
+              <div class="flex gap-1 text-xl text-amber-500" role="radiogroup" aria-label="Nilai kualitas">
+                <template x-for="n in 5"><button type="button" @click="repForm.kualitas = n" :aria-label="n + ' bintang'"><i :class="n <= repForm.kualitas ? 'fa-solid fa-star' : 'fa-regular fa-star text-ink/20'"></i></button></template>
+              </div>
+            </div>
+            <label class="block"><span class="label">Catatan K3</span><select x-model="repForm.k3" class="input"><option>Aman</option><option>Near Miss</option><option>Insiden</option></select></label>
+            <label class="block"><span class="label">Status pekerjaan</span><select x-model="repForm.status" class="input"><option>Selesai</option><option>Proses</option><option>Kendala</option></select></label>
+          </div>
+        </template>
+        <p x-show="repForm.kehadiran !== 'Hadir'" class="bg-surface p-3 text-xs text-ink/60 sm:col-span-2">
+          <i class="fa-solid fa-circle-info mr-1 text-navy"></i>
+          <span x-show="repForm.kehadiran !== 'Alpa'">Izin, sakit dan cuti tidak mengurangi skor kehadiran KPI.</span>
+          <span x-show="repForm.kehadiran === 'Alpa'">Alpa (tanpa keterangan) mengurangi skor kehadiran KPI.</span>
+        </p>
+        <label class="flex items-center gap-2 text-sm"><input type="checkbox" x-model="repForm.verified" class="h-4 w-4 rounded-none border-ink/30 text-navy focus:ring-navy"> Sudah diverifikasi pengawas</label>
+        <label class="block sm:col-span-2"><span class="label" x-text="repForm.kehadiran === 'Hadir' ? 'Catatan / kendala' : 'Keterangan'"></span><textarea x-model="repForm.catatan" rows="2" class="input"></textarea></label>
+      </div>
+      <div class="flex flex-wrap items-center justify-between gap-2 border-t border-black/5 px-6 py-4">
+        <span class="text-xs text-ink/40" x-show="repForm.draft"><span x-text="stats.draft"></span> laporan belum diisi</span>
+        <div class="ml-auto flex gap-2">
+          <button type="button" @click="repModal = false" class="btn-light">Batal</button>
+          <button type="submit" class="btn-primary"><i class="fa-solid fa-floppy-disk"></i> Simpan</button>
+          <button type="button" x-show="repForm.draft" @click="saveReport() && $nextTick(() => fillNextDraft())" class="btn-dark">Simpan &amp; berikutnya <i class="fa-solid fa-arrow-right text-xs"></i></button>
+        </div>
+      </div>
+    </form>
+  </template>
+</div>
+
+<!-- =============================================================== MODAL: UNIT KERJA -->
+<div x-show="unitModal" x-transition.opacity class="fixed inset-0 z-[60] flex items-start justify-center overflow-y-auto bg-ink/50 p-4 sm:p-8" @keydown.escape.window="unitModal = false">
+  <template x-if="unitForm">
+    <form @submit.prevent="saveUnit()" class="w-full max-w-xl bg-white shadow-2xl" x-trap.noscroll="unitModal" role="dialog" aria-modal="true" aria-labelledby="unit-title">
+      <div class="flex items-center justify-between border-b border-black/5 px-6 py-4">
+        <h2 id="unit-title" class="text-lg font-semibold" x-text="unitForm.id ? 'Ubah Unit Kerja' : 'Tambah Unit Kerja'"></h2>
+        <button type="button" @click="unitModal = false" class="btn-icon" aria-label="Tutup"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="grid gap-4 p-6 sm:grid-cols-[8rem_1fr]">
+        <label class="block"><span class="label">Kode *</span><input x-model="unitForm.kode" maxlength="5" required class="input font-mono uppercase"></label>
+        <label class="block"><span class="label">Nama unit *</span><input x-model="unitForm.nama" required class="input"></label>
+        <label class="block sm:col-span-2"><span class="label">Lokasi</span><select x-model="unitForm.lokasi" class="input"><option>Kantor Timika</option><option>Lowland</option><option>Highland</option></select></label>
+        <label class="block sm:col-span-2"><span class="label">Deskripsi</span><textarea x-model="unitForm.deskripsi" rows="2" class="input"></textarea></label>
+        <label class="block sm:col-span-2"><span class="label">Daftar kegiatan (satu per baris) — dipakai sebagai pilihan di daily report</span><textarea x-model="unitForm.kegiatanText" rows="4" class="input"></textarea></label>
+      </div>
+      <div class="flex justify-end gap-2 border-t border-black/5 px-6 py-4">
+        <button type="button" @click="unitModal = false" class="btn-light">Batal</button>
+        <button type="submit" class="btn-primary"><i class="fa-solid fa-floppy-disk"></i> Simpan</button>
+      </div>
+    </form>
+  </template>
+</div>
+
+<!-- =============================================================== MODAL: UNGGAH DOKUMEN -->
+<div x-show="docModal" x-transition.opacity class="fixed inset-0 z-[60] flex items-start justify-center overflow-y-auto bg-ink/50 p-4 sm:p-8" @keydown.escape.window="docModal = false">
+  <template x-if="docForm">
+    <form @submit.prevent="saveDoc()" class="w-full max-w-xl bg-white shadow-2xl" x-trap.noscroll="docModal" role="dialog" aria-modal="true" aria-labelledby="doc-title">
+      <div class="flex items-center justify-between border-b border-black/5 px-6 py-4">
+        <h2 id="doc-title" class="text-lg font-semibold">Unggah Dokumen</h2>
+        <button type="button" @click="docModal = false" class="btn-icon" aria-label="Tutup"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="grid gap-4 p-6 sm:grid-cols-2">
+        <label class="block sm:col-span-2"><span class="label">Karyawan *</span><select x-model="docForm.empId" class="input"><template x-for="e in db.employees" :key="e.id"><option :value="e.id" x-text="e.nama + ' (' + e.nik + ')'" :selected="e.id === docForm.empId"></option></template></select></label>
+        <label class="block"><span class="label">Jenis dokumen</span><select x-model="docForm.jenis" class="input"><template x-for="j in ['Surat Kontrak', 'KTP', 'BPJS', 'Sertifikat', 'Ijazah', 'NPWP', 'Lainnya']"><option x-text="j"></option></template></select></label>
+        <label class="block"><span class="label" x-text="docForm.jenis === 'Surat Kontrak' ? 'Kontrak berakhir' : 'Berlaku sampai (opsional)'"></span><input x-model="docForm.berlaku" type="date" class="input"></label>
+        <label class="block sm:col-span-2"><span class="label" x-text="docForm.jenis === 'Surat Kontrak' ? 'Nomor kontrak *' : 'Nama dokumen *'"></span><input x-model="docForm.nama" required class="input"></label>
+        <label class="flex cursor-pointer flex-col items-center justify-center gap-2 border-2 border-dashed border-ink/15 p-8 text-center hover:border-navy sm:col-span-2">
+          <i class="fa-solid fa-cloud-arrow-up text-3xl text-navy"></i>
+          <span class="text-sm" x-text="docForm.file ? docForm.file.name + ' (' + fmtSize(docForm.file.size) + ')' : 'Klik untuk memilih file PDF / gambar'"></span>
+          <span class="text-xs text-ink/40">Simulasi: file ≤ 400 KB tersimpan penuh, file lebih besar hanya metadata</span>
+          <input type="file" accept=".pdf,image/*" class="sr-only" @change="attachDoc($event)">
+        </label>
+      </div>
+      <div class="flex justify-end gap-2 border-t border-black/5 px-6 py-4">
+        <button type="button" @click="docModal = false" class="btn-light">Batal</button>
+        <button type="submit" class="btn-primary"><i class="fa-solid fa-upload"></i> Unggah</button>
+      </div>
+    </form>
+  </template>
+</div>
+
+<!-- =============================================================== PREVIEW FILE -->
+<div x-show="preview" x-transition.opacity class="fixed inset-0 z-[70] flex items-center justify-center bg-ink/80 p-4" @click.self="preview = null" @keydown.escape.window="preview = null">
+  <template x-if="preview">
+    <div class="flex h-[85vh] w-full max-w-4xl flex-col bg-white">
+      <div class="flex items-center justify-between border-b border-black/5 px-4 py-3"><p class="truncate text-sm font-medium" x-text="preview.name"></p><button @click="preview = null" class="btn-icon" aria-label="Tutup"><i class="fa-solid fa-xmark"></i></button></div>
+      <div class="flex-1 overflow-auto bg-surface">
+        <img x-show="preview.type.startsWith('image')" :src="preview.data" :alt="preview.name" class="mx-auto max-h-full">
+        <iframe x-show="!preview.type.startsWith('image')" :src="preview.data" title="Pratinjau dokumen" class="h-full w-full"></iframe>
+      </div>
+    </div>
+  </template>
+</div>
+
+<!-- =============================================================== KONFIRMASI -->
+<div x-show="confirmBox.show" x-transition.opacity class="fixed inset-0 z-[80] flex items-center justify-center bg-ink/50 p-4" @keydown.escape.window="confirmBox.show = false">
+  <div class="w-full max-w-sm bg-white p-6 shadow-2xl" role="alertdialog" aria-modal="true" x-trap="confirmBox.show">
+    <span class="grid h-10 w-10 place-items-center bg-red-50 text-red-600"><i class="fa-solid fa-triangle-exclamation"></i></span>
+    <p class="mt-4 text-sm" x-text="confirmBox.text"></p>
+    <div class="mt-6 flex justify-end gap-2"><button @click="confirmBox.show = false" class="btn-light">Batal</button><button @click="confirmYes()" class="btn-danger">Ya, lanjutkan</button></div>
+  </div>
+</div>
+
+<!-- =============================================================== TOOLTIP GRAFIK -->
+<div x-show="tip.show" class="pointer-events-none fixed z-[90] -translate-x-1/2 -translate-y-full bg-ink px-3 py-2 text-xs text-white shadow-lg" :style="`left:${tip.x}px;top:${tip.y - 8}px`">
+  <p class="text-white/60" x-text="tip.title"></p><p class="font-medium" x-text="tip.value"></p>
+</div>
+
+<!-- =============================================================== TOAST -->
+<div class="fixed bottom-4 right-4 z-[90] flex w-80 flex-col gap-2" aria-live="polite">
+  <template x-for="t in toasts" :key="t.id">
+    <div x-transition class="flex items-start gap-3 bg-ink px-4 py-3 text-sm text-white shadow-xl">
+      <i class="fa-solid mt-0.5" :class="t.type === 'error' ? 'fa-circle-exclamation text-red-400' : t.type === 'info' ? 'fa-circle-info text-sky' : 'fa-circle-check text-emerald-400'"></i>
+      <span x-text="t.text"></span>
+    </div>
+  </template>
+</div>
+
+</div>
+</template>
+</body>
+</html>

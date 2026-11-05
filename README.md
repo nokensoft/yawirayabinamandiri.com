@@ -89,6 +89,14 @@ yawirayabinamandiri.com/
 │   ├── login.html                 # halaman masuk
 │   ├── index.html                 # aplikasi panel admin (semua modul)
 │   └── assets/admin.js            # data, logika, perhitungan KPI
+├── hris/                          # PROTOTYPE HRIS, absensi kartu barcode & payroll
+│   ├── login.html                 # pilih peran simulasi (5 pengguna)
+│   ├── index.html                 # aplikasi HRIS (semua modul)
+│   ├── mesin.html                 # simulator scanner kartu ID berbarcode
+│   ├── cetak.html                 # slip gaji, kartu absensi, pengesahan, transfer bank
+│   ├── KONSEP-DATABASE.md         # konsep tabel, rumus & format laporan (bahan analisa)
+│   └── assets/                    # payroll-engine.js (rumus), hris-data.js (data & seed), hris.js (aplikasi)
+├── _backup/                       # backup website sebelum pengembangan HRIS
 └── _profile/                      # PDF company profile (sumber konten, JANGAN diunggah)
 ```
 
@@ -188,6 +196,31 @@ Pada implementasi produksi, sistem dibangun di server dengan database, sehingga:
 - file tersimpan di storage server,
 - ada notifikasi kontrak via email,
 - konten website terhubung langsung ke halaman publik.
+
+---
+
+## Prototype HRIS, Absensi Kartu Barcode & Payroll (`hris/`)
+
+Prototype untuk menggantikan sistem payroll lama (Visual Basic) dengan aplikasi web berbasis domain. Fokusnya database karyawan lapangan & kantor, absensi kartu ID berbarcode yang terhubung ke web, rumus lembur & gaji, serta bukti payroll. Seluruh data adalah **dummy** dan disimpan di `localStorage` browser.
+
+**Cara mencoba:** buka `hris/login.html`, lalu pilih salah satu peran. Kata sandi semua akun adalah `demo123`. Peran juga bisa diganti lewat menu pengguna di kanan atas.
+
+| Peran | Akun | Yang bisa dicoba |
+|---|---|---|
+| Admin Master | admin@yawirayabinamandiri.com | Semua modul, pengguna & hak akses, skema database, reset data |
+| Operator HR & Absensi | operator@… | Data karyawan, terbitkan/blokir/cetak kartu ID, import log scanner, koreksi absensi, persetujuan lembur & izin |
+| Keuangan / Payroll | keuangan@… | Komponen gaji, hitung payroll, penyesuaian, ajukan, tandai dibayar, slip & laporan |
+| Pimpinan / Direksi | pimpinan@… | Menyetujui / mengembalikan payroll Oktober (status awal *Diajukan*), laporan analisa |
+| Karyawan | yohanes.wenda@… (atau pilih karyawan lain) | Kehadiran pribadi, slip gaji, pengajuan izin/cuti |
+
+**Demo absensi kartu barcode:** buka `hris/mesin.html` di tab lain, atau pakai simulator yang tertanam di menu *Kartu & Scanner Barcode*. Klik kartu karyawan untuk memindainya, ketik/scan nomor kartu (scanner USB bekerja seperti keyboard), atau pindai barcode dengan kamera. Kartu tidak terdaftar, diblokir, atau kartu lama yang sudah diganti akan ditolak. Log terkirim otomatis dan muncul langsung di aplikasi. Atur *waktu scan* (misalnya 18:40) untuk mensimulasikan lembur, atau matikan jaringan untuk mensimulasikan scanner offline (log diantrekan, lalu dikirim saat online kembali).
+
+**Aturan bawaan** (semua bisa diubah di menu *Rumus & Komponen*):
+- Skema kerja: Kantor basic 8 jam (Senin–Jumat); Perusahaan 6-1, 7 jam; Freeport roster 6-1, 7 jam.
+- Lembur hari kerja: 1,5× untuk jam pertama, 2× untuk jam berikutnya. Lembur hari libur mengikuti PP 35/2021. Upah per jam = upah ÷ 173.
+- BPJS Kesehatan/JHT/JP/JKK/JKM, PPh 21 metode TER (PP 58/2023), cut-off absensi tanggal 20.
+
+Rincian tabel, rumus dan format laporan untuk analisa ada di [`hris/KONSEP-DATABASE.md`](hris/KONSEP-DATABASE.md).
 
 ---
 

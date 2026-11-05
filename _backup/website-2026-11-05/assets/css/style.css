@@ -1,0 +1,92 @@
+/* PT. Yawiraya Bina Mandiri — gaya tambahan di atas Tailwind */
+[x-cloak] { display: none !important; }
+
+.container-x {
+  width: 100%;
+  max-width: 1320px;
+  margin-inline: auto;
+  padding-inline: 1rem;
+}
+@media (min-width: 640px) { .container-x { padding-inline: 1.5rem; } }
+@media (min-width: 1024px) { .container-x { padding-inline: 2rem; } }
+
+/* Judul besar ala referensi: huruf kapital, tipis, rapat */
+.display {
+  font-weight: 400;
+  text-transform: uppercase;
+  letter-spacing: -0.035em;
+  line-height: 0.95;
+}
+
+/* Navigasi pill */
+.nav-link {
+  border-radius: 0.375rem;
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  color: rgb(15 22 38 / 0.7);
+  transition: background-color .2s, color .2s;
+}
+.nav-link:hover { background: #F1F2F4; color: #0F1626; }
+.nav-link.is-active { background: #0E3A78; color: #fff; }
+
+/* Tombol bulat panah */
+.arrow-btn {
+  display: inline-grid;
+  place-items: center;
+  flex-shrink: 0;
+  border-radius: 0.375rem;
+  transition: background-color .25s, color .25s, transform .25s;
+  vertical-align: middle;
+}
+.arrow-btn:hover { transform: rotate(45deg); }
+
+.btn-solid, .btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  gap: .5rem;
+  border-radius: 0.375rem;
+  padding: .75rem 1.5rem;
+  font-size: .875rem;
+  font-weight: 500;
+  transition: background-color .2s, color .2s;
+}
+.btn-solid { background: #0F1626; color: #fff; }
+.btn-solid:hover { background: #0E3A78; }
+.btn-ghost { background: #fff; color: #0F1626; box-shadow: inset 0 0 0 1px rgb(15 22 38 / .12); }
+.btn-ghost:hover { background: #0F1626; color: #fff; }
+
+/* Chip kaca di atas gambar hero */
+.glass-chip {
+  display: flex;
+  align-items: center;
+  gap: .75rem;
+  border-radius: 0.375rem;
+  padding: .85rem 1rem;
+  font-size: .8rem;
+  color: #fff;
+  background: rgb(255 255 255 / .12);
+  border: 1px solid rgb(255 255 255 / .2);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  transition: background-color .2s;
+}
+.glass-chip:hover { background: rgb(255 255 255 / .25); }
+
+/* Foto pimpinan dari profil memiliki bingkai — potong sedikit */
+.portrait { transform: scale(1.12); }
+
+/* Marquee mitra */
+.marquee { animation: marquee 40s linear infinite; }
+.marquee:hover { animation-play-state: paused; }
+@keyframes marquee { to { transform: translateX(-50%); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .marquee { animation: none; }
+  html { scroll-behavior: auto; }
+}
+
+/* Google Translate — sembunyikan UI bawaan, pakai tombol ID/EN sendiri */
+#google_translate_element { position: absolute; left: -9999px; top: 0; width: 1px; height: 1px; overflow: hidden; }
+iframe.skiptranslate, .goog-te-banner-frame, .VIpgJd-ZVi9od-ORHb-OEVmcd, #goog-gt-tt, .goog-te-balloon-frame { display: none !important; visibility: hidden !important; }
+body { top: 0 !important; position: static !important; }
+.goog-text-highlight, font[style] { background: none !important; box-shadow: none !important; }

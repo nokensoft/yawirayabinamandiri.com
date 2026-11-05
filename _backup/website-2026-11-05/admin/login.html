@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Masuk Panel Admin — PT. Yawiraya Bina Mandiri</title>
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="icon" type="image/png" href="../assets/img/logo-ybm.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+  <script src="https://cdn.tailwindcss.com/3.4.5"></script>
+  <script src="../assets/js/tailwind.config.js"></script>
+  <link rel="stylesheet" href="../assets/css/style.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.1/dist/cdn.min.js"></script>
+</head>
+<body class="min-h-screen bg-surface font-sans text-ink antialiased">
+  <div class="grid min-h-screen lg:grid-cols-2">
+    <!-- Panel gambar -->
+    <div class="relative hidden lg:block">
+      <img src="../assets/img/tim-lapangan.jpg" alt="Tim lapangan PT. Yawiraya Bina Mandiri" class="absolute inset-0 h-full w-full object-cover">
+      <div class="absolute inset-0 bg-gradient-to-t from-ink via-ink/60 to-ink/20"></div>
+      <div class="absolute inset-x-0 bottom-0 p-12 text-white">
+        <p class="display text-5xl text-white">Panel Admin<br><span class="text-sky">&amp; Sistem Database</span></p>
+        <p class="mt-4 max-w-md text-white/70">Kelola konten website, database karyawan, unit kerja, daily report, dokumen dan monitoring kinerja dalam satu tempat.</p>
+      </div>
+    </div>
+
+    <!-- Form masuk -->
+    <div class="flex items-center justify-center p-6 sm:p-12" x-data="{
+        email: 'admin@yawirayabinamandiri.com', password: 'demo123', show: false, error: '', loading: false,
+        submit() {
+          this.error = '';
+          if (this.email.trim().toLowerCase() !== 'admin@yawirayabinamandiri.com' || this.password !== 'demo123') { this.error = 'Email atau kata sandi salah.'; return; }
+          this.loading = true;
+          localStorage.setItem('ybm-admin-session', JSON.stringify({ nama: 'Administrator', email: this.email, role: 'Super Admin', t: Date.now() }));
+          setTimeout(() => location.href = 'index.html', 500);
+        } }">
+      <div class="w-full max-w-md">
+        <a href="../index.html" class="inline-flex items-center gap-2 text-sm text-ink/60 hover:text-navy"><i class="fa-solid fa-arrow-left text-xs"></i> Kembali ke website</a>
+        <div class="mt-10 flex items-center gap-3">
+          <img src="../assets/img/logo-ybm.png" alt="Logo YBM" class="h-12 w-auto">
+          <div><p class="font-semibold text-navy">PT. Yawiraya Bina Mandiri</p><p class="text-xs text-ink/50">Panel Admin</p></div>
+        </div>
+        <h1 class="display mt-10 text-4xl">Masuk</h1>
+        <p class="mt-2 text-sm text-ink/60">Gunakan akun administrator untuk melanjutkan.</p>
+
+        <div class="mt-6 border-l-4 border-sky bg-white p-4 text-sm">
+          <p class="font-medium"><i class="fa-solid fa-circle-info text-sky"></i> Mode simulasi</p>
+          <p class="mt-1 text-ink/60">Email: <code class="font-mono">admin@yawirayabinamandiri.com</code><br>Kata sandi: <code class="font-mono">demo123</code></p>
+        </div>
+
+        <form class="mt-8 space-y-5" @submit.prevent="submit">
+          <label class="block">
+            <span class="text-sm font-medium">Email</span>
+            <input x-model="email" type="email" autocomplete="username" required class="mt-2 w-full rounded-md border-0 bg-white px-4 py-3 text-sm ring-1 ring-black/10 focus:ring-2 focus:ring-navy">
+          </label>
+          <label class="block">
+            <span class="text-sm font-medium">Kata Sandi</span>
+            <span class="relative mt-2 block">
+              <input x-model="password" :type="show ? 'text' : 'password'" autocomplete="current-password" required class="w-full rounded-md border-0 bg-white px-4 py-3 pr-12 text-sm ring-1 ring-black/10 focus:ring-2 focus:ring-navy">
+              <button type="button" @click="show = !show" class="absolute inset-y-0 right-0 px-4 text-ink/40 hover:text-ink" :aria-label="show ? 'Sembunyikan kata sandi' : 'Tampilkan kata sandi'"><i class="fa-regular" :class="show ? 'fa-eye-slash' : 'fa-eye'"></i></button>
+            </span>
+          </label>
+          <p x-show="error" x-text="error" class="text-sm text-red-600" role="alert"></p>
+          <button type="submit" class="btn-solid w-full justify-center py-3" :disabled="loading">
+            <i class="fa-solid" :class="loading ? 'fa-spinner fa-spin' : 'fa-right-to-bracket'"></i>
+            <span x-text="loading ? 'Memproses…' : 'Masuk'"></span>
+          </button>
+        </form>
+
+        <p class="mt-12 text-center text-xs text-ink/40">
+          <a href="https://nokensoft.com" target="_blank" rel="noopener noreferrer" class="group inline-flex items-center gap-2 hover:text-ink">Powered by <img src="../assets/img/nokensoft.png" alt="Logo Nokensoft" class="h-5 w-auto transition group-hover:scale-110"> <span class="font-medium text-ink/60 group-hover:text-navy">Nokensoft.com</span></a>
+        </p>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

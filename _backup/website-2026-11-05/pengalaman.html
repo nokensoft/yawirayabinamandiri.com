@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="id" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pengalaman & Proyek — PT. Yawiraya Bina Mandiri</title>
+  <meta name="description" content="Daftar proyek dan dokumentasi pengalaman kerja PT. Yawiraya Bina Mandiri.">
+  <link rel="icon" type="image/png" href="assets/img/logo-ybm.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+  <script src="https://cdn.tailwindcss.com/3.4.5"></script>
+  <script src="assets/js/tailwind.config.js"></script>
+  <link rel="stylesheet" href="assets/css/style.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/@alpinejs/collapse@3.14.1/dist/cdn.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/@alpinejs/intersect@3.14.1/dist/cdn.min.js"></script>
+  <script defer src="assets/js/main.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.1/dist/cdn.min.js"></script>
+</head>
+<body class="bg-surface font-sans text-ink antialiased">
+<a href="#main" class="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[60] focus:rounded-md focus:bg-navy focus:px-4 focus:py-2 focus:text-white">Lewati ke konten</a>
+
+<div x-data="topbar" class="notranslate bg-ink text-xs text-white/70" translate="no">
+  <div class="container-x flex h-10 items-center justify-between gap-4">
+    <div class="flex min-w-0 items-center gap-4 sm:gap-5">
+      <span class="hidden items-center gap-2 md:inline-flex"><i class="fa-regular fa-calendar text-sky"></i><span x-text="date"></span></span>
+      <span class="inline-flex items-center gap-2 tabular-nums"><i class="fa-regular fa-clock text-sky"></i><span x-text="time">--:--:--</span></span>
+      <span class="inline-flex min-w-0 items-center gap-2" :title="weather.label">
+        <i class="fa-solid text-sky" :class="weather.icon"></i>
+        <span class="truncate"><span x-text="temp !== null ? temp + '°C' : '…'"></span><span class="hidden sm:inline"> <span x-text="weather.label"></span></span> · Timika</span>
+      </span>
+    </div>
+    <div class="flex shrink-0 items-center gap-3">
+      <div class="hidden items-center gap-1 sm:flex" aria-label="Media sosial">
+        <a href="#" target="_blank" rel="noopener noreferrer" aria-label="Instagram" title="Instagram" class="grid h-7 w-7 place-items-center rounded-md transition hover:bg-white/10 hover:text-white"><i class="fa-brands fa-instagram"></i></a>
+        <a href="#" target="_blank" rel="noopener noreferrer" aria-label="Facebook" title="Facebook" class="grid h-7 w-7 place-items-center rounded-md transition hover:bg-white/10 hover:text-white"><i class="fa-brands fa-facebook-f"></i></a>
+        <a href="#" target="_blank" rel="noopener noreferrer" aria-label="YouTube" title="YouTube" class="grid h-7 w-7 place-items-center rounded-md transition hover:bg-white/10 hover:text-white"><i class="fa-brands fa-youtube"></i></a>
+        <a href="#" target="_blank" rel="noopener noreferrer" aria-label="WhatsApp Channel" title="WhatsApp Channel" class="grid h-7 w-7 place-items-center rounded-md transition hover:bg-white/10 hover:text-white"><i class="fa-brands fa-whatsapp"></i></a>
+      </div>
+      <span class="hidden h-4 w-px bg-white/15 sm:block"></span>
+      <div class="flex items-center rounded-md bg-white/10 p-0.5" role="group" aria-label="Pilih bahasa">
+        <button type="button" @click="setLang('id')" :aria-pressed="lang === 'id'" :class="lang === 'id' ? 'bg-white text-ink' : 'text-white/70 hover:text-white'" class="rounded-md px-2.5 py-1 font-semibold transition">ID</button>
+        <button type="button" @click="setLang('en')" :aria-pressed="lang === 'en'" :class="lang === 'en' ? 'bg-white text-ink' : 'text-white/70 hover:text-white'" class="rounded-md px-2.5 py-1 font-semibold transition">EN</button>
+      </div>
+    </div>
+  </div>
+</div>
+<div id="google_translate_element" aria-hidden="true"></div>
+<header x-data="{ open: false, scrolled: false }" @scroll.window="scrolled = window.scrollY > 10"
+  :class="scrolled ? 'bg-surface/90 backdrop-blur shadow-sm' : 'bg-surface'"
+  class="sticky top-0 z-50 transition">
+  <div class="container-x flex h-20 items-center justify-between gap-4">
+    <a href="index.html" class="flex items-center gap-3">
+      <img src="assets/img/logo-ybm.png" alt="Logo PT. Yawiraya Bina Mandiri" class="h-10 w-auto">
+      <span class="hidden leading-tight sm:block">
+        <span class="block text-sm font-semibold tracking-tight text-navy">PT. Yawiraya Bina Mandiri</span>
+        <span class="block text-[11px] text-ink/50">General Contractor · Supplier</span>
+      </span>
+    </a>
+    <nav class="hidden items-center gap-1 rounded-md bg-white p-1 ring-1 ring-black/5 lg:flex" aria-label="Navigasi utama">
+      <a href="index.html" class="nav-link ">Beranda</a>
+      <a href="tentang.html" class="nav-link ">Tentang</a>
+      <a href="layanan.html" class="nav-link ">Layanan</a>
+      <a href="pengalaman.html" class="nav-link is-active">Pengalaman</a>
+      <a href="k3.html" class="nav-link ">K3</a>
+      <a href="armada.html" class="nav-link ">Armada</a>
+      <a href="kontak.html" class="nav-link ">Kontak</a>
+    </nav>
+    <div class="flex items-center gap-2">
+      <a href="tel:09013265824" class="hidden items-center gap-2 rounded-md bg-ink px-4 py-2.5 text-sm font-medium text-white transition hover:bg-navy md:inline-flex">
+        <i class="fa-solid fa-phone text-xs"></i> (0901) 3265824
+      </a>
+      <button @click="open = !open" class="grid h-11 w-11 place-items-center rounded-md bg-white ring-1 ring-black/5 lg:hidden" :aria-expanded="open" aria-label="Buka menu">
+        <i class="fa-solid" :class="open ? 'fa-xmark' : 'fa-bars'"></i>
+      </button>
+    </div>
+  </div>
+  <div x-show="open" x-collapse x-cloak @click.outside="open = false" class="border-t border-black/5 bg-white lg:hidden">
+    <nav class="container-x grid gap-1 py-4">
+      <a href="index.html" class="flex items-center justify-between rounded-md px-4 py-3 text-sm hover:bg-surface">Beranda<i class="fa-solid fa-arrow-right -rotate-45 text-xs opacity-60"></i></a>
+      <a href="tentang.html" class="flex items-center justify-between rounded-md px-4 py-3 text-sm hover:bg-surface">Tentang<i class="fa-solid fa-arrow-right -rotate-45 text-xs opacity-60"></i></a>
+      <a href="layanan.html" class="flex items-center justify-between rounded-md px-4 py-3 text-sm hover:bg-surface">Layanan<i class="fa-solid fa-arrow-right -rotate-45 text-xs opacity-60"></i></a>
+      <a href="pengalaman.html" class="flex items-center justify-between rounded-md px-4 py-3 text-sm bg-navy text-white">Pengalaman<i class="fa-solid fa-arrow-right -rotate-45 text-xs opacity-60"></i></a>
+      <a href="k3.html" class="flex items-center justify-between rounded-md px-4 py-3 text-sm hover:bg-surface">K3<i class="fa-solid fa-arrow-right -rotate-45 text-xs opacity-60"></i></a>
+      <a href="armada.html" class="flex items-center justify-between rounded-md px-4 py-3 text-sm hover:bg-surface">Armada<i class="fa-solid fa-arrow-right -rotate-45 text-xs opacity-60"></i></a>
+      <a href="kontak.html" class="flex items-center justify-between rounded-md px-4 py-3 text-sm hover:bg-surface">Kontak<i class="fa-solid fa-arrow-right -rotate-45 text-xs opacity-60"></i></a>
+    </nav>
+  </div>
+</header>
+<main id="main">
+
+  
+  <section class="container-x pt-6">
+    <div class="relative overflow-hidden rounded-none">
+      <img src="assets/img/baliho-pon.jpg" alt="Pemasangan baliho PON XX" class="h-56 w-full object-cover sm:h-72 lg:h-80">
+      <div class="absolute inset-0 bg-gradient-to-t from-ink/70 via-ink/10 to-transparent"></div>
+      <nav class="absolute bottom-5 left-5 flex items-center gap-2 text-xs text-white/80" aria-label="Breadcrumb">
+        <a href="index.html" class="hover:text-white">Beranda</a><i class="fa-solid fa-chevron-right text-[9px]"></i><span class="text-white">Pengalaman</span>
+      </nav>
+    </div>
+    <div class="grid gap-8 py-12 lg:grid-cols-12 lg:py-16">
+      <div class="lg:col-span-7">
+        <span class="inline-flex items-center gap-2 rounded-none bg-white text-ink/70 ring-1 ring-black/5 px-3 py-1 text-xs font-medium"><span class="h-1.5 w-1.5 rounded-full bg-sky"></span>Pengalaman</span>
+        <h1 class="display mt-5 text-5xl sm:text-6xl lg:text-7xl">Rekam Jejak<br><span class="text-navy">Proyek Kami</span></h1>
+      </div>
+      <p class="self-end text-lg leading-relaxed text-ink/60 lg:col-span-5">Order pekerjaan dari sejumlah perusahaan swasta dan pemerintah lokal — dikerjakan oleh manajemen dan karyawan yang terlatih dan berpengalaman.</p>
+    </div>
+  </section>
+
+  <section class="container-x" x-data="{ filter: 'semua' }">
+    <div class="flex flex-wrap gap-2" role="tablist" aria-label="Filter galeri">
+      <button role="tab" @click="filter = 'semua'" :aria-selected="filter === 'semua'" :class="filter === 'semua' ? 'bg-navy text-white' : 'bg-white text-ink/70 hover:text-ink'" class="rounded-md px-4 py-2 text-sm ring-1 ring-black/5 transition">Semua</button>
+      <button role="tab" @click="filter = 'scaffolding'" :aria-selected="filter === 'scaffolding'" :class="filter === 'scaffolding' ? 'bg-navy text-white' : 'bg-white text-ink/70 hover:text-ink'" class="rounded-md px-4 py-2 text-sm ring-1 ring-black/5 transition">Scaffolding &amp; Painting</button>
+      <button role="tab" @click="filter = 'carpenter'" :aria-selected="filter === 'carpenter'" :class="filter === 'carpenter' ? 'bg-navy text-white' : 'bg-white text-ink/70 hover:text-ink'" class="rounded-md px-4 py-2 text-sm ring-1 ring-black/5 transition">Carpenter &amp; Mason</button>
+      <button role="tab" @click="filter = 'labor'" :aria-selected="filter === 'labor'" :class="filter === 'labor' ? 'bg-navy text-white' : 'bg-white text-ink/70 hover:text-ink'" class="rounded-md px-4 py-2 text-sm ring-1 ring-black/5 transition">Labor Supplier</button>
+      <button role="tab" @click="filter = 'bus'" :aria-selected="filter === 'bus'" :class="filter === 'bus' ? 'bg-navy text-white' : 'bg-white text-ink/70 hover:text-ink'" class="rounded-md px-4 py-2 text-sm ring-1 ring-black/5 transition">Rental Bus</button>
+      <button role="tab" @click="filter = 'konstruksi'" :aria-selected="filter === 'konstruksi'" :class="filter === 'konstruksi' ? 'bg-navy text-white' : 'bg-white text-ink/70 hover:text-ink'" class="rounded-md px-4 py-2 text-sm ring-1 ring-black/5 transition">Lapen &amp; Konstruksi</button>
+    </div>
+    <div class="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      
+      <figure x-show="filter === 'semua' || filter === 'scaffolding'" x-transition.opacity class="group relative overflow-hidden rounded-none bg-white">
+        <img src="assets/img/scaffolding-barrack.jpg" alt="Pengecatan & Scaffolding Barrack BQ Garden, Tembagapura" loading="lazy" class="h-64 w-full object-cover transition duration-500 group-hover:scale-105">
+        <figcaption class="p-5 text-sm font-medium leading-snug">Pengecatan & Scaffolding Barrack BQ Garden, Tembagapura</figcaption>
+      </figure>
+      <figure x-show="filter === 'semua' || filter === 'scaffolding'" x-transition.opacity class="group relative overflow-hidden rounded-none bg-white">
+        <img src="assets/img/acetylene-plant.jpg" alt="Pengecatan & Scaffolding Acetylene Oxy Plant LIP" loading="lazy" class="h-64 w-full object-cover transition duration-500 group-hover:scale-105">
+        <figcaption class="p-5 text-sm font-medium leading-snug">Pengecatan & Scaffolding Acetylene Oxy Plant LIP</figcaption>
+      </figure>
+      <figure x-show="filter === 'semua' || filter === 'scaffolding'" x-transition.opacity class="group relative overflow-hidden rounded-none bg-white">
+        <img src="assets/img/scaffolding-gazebo.jpg" alt="Pekerjaan scaffolding & pengecatan fasilitas" loading="lazy" class="h-64 w-full object-cover transition duration-500 group-hover:scale-105">
+        <figcaption class="p-5 text-sm font-medium leading-snug">Pekerjaan scaffolding & pengecatan fasilitas</figcaption>
+      </figure>
+      <figure x-show="filter === 'semua' || filter === 'carpenter'" x-transition.opacity class="group relative overflow-hidden rounded-none bg-white">
+        <img src="assets/img/baliho-pon.jpg" alt="Pemasangan Baliho di Atrium, Kuala Kencana — Persiapan PON XX" loading="lazy" class="h-64 w-full object-cover transition duration-500 group-hover:scale-105">
+        <figcaption class="p-5 text-sm font-medium leading-snug">Pemasangan Baliho di Atrium, Kuala Kencana — Persiapan PON XX</figcaption>
+      </figure>
+      <figure x-show="filter === 'semua' || filter === 'carpenter'" x-transition.opacity class="group relative overflow-hidden rounded-none bg-white">
+        <img src="assets/img/pos-security.jpg" alt="Pembuatan Pos Security depan PK1/PK2 Tembagapura" loading="lazy" class="h-64 w-full object-cover transition duration-500 group-hover:scale-105">
+        <figcaption class="p-5 text-sm font-medium leading-snug">Pembuatan Pos Security depan PK1/PK2 Tembagapura</figcaption>
+      </figure>
+      <figure x-show="filter === 'semua' || filter === 'carpenter'" x-transition.opacity class="group relative overflow-hidden rounded-none bg-white">
+        <img src="assets/img/tempat-duduk.jpg" alt="Pembuatan 98 unit tempat duduk konkrit di Kuala Kencana" loading="lazy" class="h-64 w-full object-cover transition duration-500 group-hover:scale-105">
+        <figcaption class="p-5 text-sm font-medium leading-snug">Pembuatan 98 unit tempat duduk konkrit di Kuala Kencana</figcaption>
+      </figure>
+      <figure x-show="filter === 'semua' || filter === 'carpenter'" x-transition.opacity class="group relative overflow-hidden rounded-none bg-white">
+        <img src="assets/img/jembatan-kayu.jpg" alt="Pembuatan jembatan kayu di Wast 02 Tembagapura" loading="lazy" class="h-64 w-full object-cover transition duration-500 group-hover:scale-105">
+        <figcaption class="p-5 text-sm font-medium leading-snug">Pembuatan jembatan kayu di Wast 02 Tembagapura</figcaption>
+      </figure>
+      <figure x-show="filter === 'semua' || filter === 'labor'" x-transition.opacity class="group relative overflow-hidden rounded-none bg-white">
+        <img src="assets/img/underground-ruc.jpg" alt="Labor supply ke PT. RUC Underground" loading="lazy" class="h-64 w-full object-cover transition duration-500 group-hover:scale-105">
+        <figcaption class="p-5 text-sm font-medium leading-snug">Labor supply ke PT. RUC Underground</figcaption>
+      </figure>
+      <figure x-show="filter === 'semua' || filter === 'labor'" x-transition.opacity class="group relative overflow-hidden rounded-none bg-white">
+        <img src="assets/img/underground-ruc-2.jpg" alt="Tenaga underground PT. RUC" loading="lazy" class="h-64 w-full object-cover transition duration-500 group-hover:scale-105">
+        <figcaption class="p-5 text-sm font-medium leading-snug">Tenaga underground PT. RUC</figcaption>
+      </figure>
+      <figure x-show="filter === 'semua' || filter === 'labor'" x-transition.opacity class="group relative overflow-hidden rounded-none bg-white">
+        <img src="assets/img/iphmc-fogging.jpg" alt="Labor supply ke IPHMC (Industrial Public Health Malaria Control)" loading="lazy" class="h-64 w-full object-cover transition duration-500 group-hover:scale-105">
+        <figcaption class="p-5 text-sm font-medium leading-snug">Labor supply ke IPHMC (Industrial Public Health Malaria Control)</figcaption>
+      </figure>
+      <figure x-show="filter === 'semua' || filter === 'labor'" x-transition.opacity class="group relative overflow-hidden rounded-none bg-white">
+        <img src="assets/img/iphmc-lab.jpg" alt="Tenaga laboratorium IPHMC" loading="lazy" class="h-64 w-full object-cover transition duration-500 group-hover:scale-105">
+        <figcaption class="p-5 text-sm font-medium leading-snug">Tenaga laboratorium IPHMC</figcaption>
+      </figure>
+      <figure x-show="filter === 'semua' || filter === 'bus'" x-transition.opacity class="group relative overflow-hidden rounded-none bg-white">
+        <img src="assets/img/bus-karyawan.jpg" alt="Bus transportasi karyawan 430 – LIP – KK" loading="lazy" class="h-64 w-full object-cover transition duration-500 group-hover:scale-105">
+        <figcaption class="p-5 text-sm font-medium leading-snug">Bus transportasi karyawan 430 – LIP – KK</figcaption>
+      </figure>
+      <figure x-show="filter === 'semua' || filter === 'bus'" x-transition.opacity class="group relative overflow-hidden rounded-none bg-white">
+        <img src="assets/img/bus-kota.jpg" alt="Rental Bus Kota RW-A, Kuala Kencana" loading="lazy" class="h-64 w-full object-cover transition duration-500 group-hover:scale-105">
+        <figcaption class="p-5 text-sm font-medium leading-snug">Rental Bus Kota RW-A, Kuala Kencana</figcaption>
+      </figure>
+      <figure x-show="filter === 'semua' || filter === 'konstruksi'" x-transition.opacity class="group relative overflow-hidden rounded-none bg-white">
+        <img src="assets/img/jalan-lapen.jpg" alt="Pekerjaan Lapen Jl. SP 1 sepanjang 1.897 m" loading="lazy" class="h-64 w-full object-cover transition duration-500 group-hover:scale-105">
+        <figcaption class="p-5 text-sm font-medium leading-snug">Pekerjaan Lapen Jl. SP 1 sepanjang 1.897 m</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section class="container-x py-16 lg:py-24" x-data="{ q: '' }">
+    <div class="flex flex-wrap items-end justify-between gap-6">
+      <div><span class="inline-flex items-center gap-2 rounded-none bg-white text-ink/70 ring-1 ring-black/5 px-3 py-1 text-xs font-medium"><span class="h-1.5 w-1.5 rounded-full bg-sky"></span>List Project — Contractor</span><h2 class="display mt-5 text-5xl">Daftar Proyek</h2><p class="mt-3 text-sm text-ink/50">Periode 2005 – 2025</p></div>
+      <label class="relative w-full sm:w-72">
+        <span class="sr-only">Cari proyek</span>
+        <i class="fa-solid fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-sm text-ink/40"></i>
+        <input x-model="q" type="search" placeholder="Cari proyek / pemilik…" class="w-full rounded-md border-0 bg-white py-3 pl-10 pr-4 text-sm ring-1 ring-black/5 focus:ring-2 focus:ring-navy">
+      </label>
+    </div>
+    <div class="mt-8 overflow-x-auto rounded-none bg-white">
+      <table class="w-full min-w-[720px] text-left text-sm">
+        <thead class="text-xs uppercase tracking-wider text-ink/40"><tr><th class="px-6 py-4">No</th><th class="px-6 py-4">Pekerjaan</th><th class="px-6 py-4">Lokasi</th><th class="px-6 py-4">Uraian</th><th class="px-6 py-4">Pemilik Proyek</th></tr></thead>
+        <tbody class="divide-y divide-ink/5">
+          <tr x-show="!q || $el.textContent.toLowerCase().includes(q.toLowerCase())" class="hover:bg-surface"><td class="px-6 py-4 tabular-nums text-ink/40">01</td><td class="px-6 py-4 font-medium">Pekerjaan Konstruksi</td><td class="px-6 py-4 text-ink/60">Bandara Timika</td><td class="px-6 py-4 text-ink/60">Pembangunan ruang tunggu dan keberangkatan airport</td><td class="px-6 py-4"><span class="rounded-none bg-surface px-3 py-1 text-xs">Bandara Internasional Mozes Kilangin</span></td></tr>
+          <tr x-show="!q || $el.textContent.toLowerCase().includes(q.toLowerCase())" class="hover:bg-surface"><td class="px-6 py-4 tabular-nums text-ink/40">02</td><td class="px-6 py-4 font-medium">Pekerjaan Konstruksi</td><td class="px-6 py-4 text-ink/60">SLD</td><td class="px-6 py-4 text-ink/60">Pembuatan tempat parkir</td><td class="px-6 py-4"><span class="rounded-none bg-surface px-3 py-1 text-xs">PT. Freeport Indonesia</span></td></tr>
+          <tr x-show="!q || $el.textContent.toLowerCase().includes(q.toLowerCase())" class="hover:bg-surface"><td class="px-6 py-4 tabular-nums text-ink/40">03</td><td class="px-6 py-4 font-medium">Pekerjaan Konstruksi</td><td class="px-6 py-4 text-ink/60">Distrik Mimika Baru</td><td class="px-6 py-4 text-ink/60">Sarana & prasarana rumah sederhana</td><td class="px-6 py-4"><span class="rounded-none bg-surface px-3 py-1 text-xs">Dinas Pemukiman</span></td></tr>
+          <tr x-show="!q || $el.textContent.toLowerCase().includes(q.toLowerCase())" class="hover:bg-surface"><td class="px-6 py-4 tabular-nums text-ink/40">04</td><td class="px-6 py-4 font-medium">Peningkatan Jalan Lapen</td><td class="px-6 py-4 text-ink/60">Distrik Mimika Baru</td><td class="px-6 py-4 text-ink/60">Peningkatan jalan</td><td class="px-6 py-4"><span class="rounded-none bg-surface px-3 py-1 text-xs">Dinas PU</span></td></tr>
+          <tr x-show="!q || $el.textContent.toLowerCase().includes(q.toLowerCase())" class="hover:bg-surface"><td class="px-6 py-4 tabular-nums text-ink/40">05</td><td class="px-6 py-4 font-medium">Painting &amp; Scaffolding</td><td class="px-6 py-4 text-ink/60">Hotel Sheraton</td><td class="px-6 py-4 text-ink/60">Pengecatan bagian luar</td><td class="px-6 py-4"><span class="rounded-none bg-surface px-3 py-1 text-xs">PT. Freeport Indonesia</span></td></tr>
+          <tr x-show="!q || $el.textContent.toLowerCase().includes(q.toLowerCase())" class="hover:bg-surface"><td class="px-6 py-4 tabular-nums text-ink/40">06</td><td class="px-6 py-4 font-medium">Pekerjaan Konstruksi</td><td class="px-6 py-4 text-ink/60">Distrik Mimika Baru</td><td class="px-6 py-4 text-ink/60">Sarana & prasarana rumah sederhana</td><td class="px-6 py-4"><span class="rounded-none bg-surface px-3 py-1 text-xs">Dinas Pemukiman</span></td></tr>
+          <tr x-show="!q || $el.textContent.toLowerCase().includes(q.toLowerCase())" class="hover:bg-surface"><td class="px-6 py-4 tabular-nums text-ink/40">07</td><td class="px-6 py-4 font-medium">Peningkatan Jalan Lapen</td><td class="px-6 py-4 text-ink/60">Distrik Mimika Baru</td><td class="px-6 py-4 text-ink/60">Peningkatan jalan</td><td class="px-6 py-4"><span class="rounded-none bg-surface px-3 py-1 text-xs">Dinas PU</span></td></tr>
+          <tr x-show="!q || $el.textContent.toLowerCase().includes(q.toLowerCase())" class="hover:bg-surface"><td class="px-6 py-4 tabular-nums text-ink/40">08</td><td class="px-6 py-4 font-medium">Peningkatan Jalan SP I – GSI (Lapen)</td><td class="px-6 py-4 text-ink/60">Distrik Mimika Baru</td><td class="px-6 py-4 text-ink/60">Peningkatan jalan</td><td class="px-6 py-4"><span class="rounded-none bg-surface px-3 py-1 text-xs">Dinas PU</span></td></tr>
+          <tr x-show="!q || $el.textContent.toLowerCase().includes(q.toLowerCase())" class="hover:bg-surface"><td class="px-6 py-4 tabular-nums text-ink/40">09</td><td class="px-6 py-4 font-medium">Painting &amp; Scaffolding</td><td class="px-6 py-4 text-ink/60">Lowland</td><td class="px-6 py-4 text-ink/60">Painting, carpenter, plumbing &amp; maintenance</td><td class="px-6 py-4"><span class="rounded-none bg-surface px-3 py-1 text-xs">PT. Freeport Indonesia</span></td></tr>
+          <tr x-show="!q || $el.textContent.toLowerCase().includes(q.toLowerCase())" class="hover:bg-surface"><td class="px-6 py-4 tabular-nums text-ink/40">10</td><td class="px-6 py-4 font-medium">Painting &amp; Scaffolding</td><td class="px-6 py-4 text-ink/60">Highland</td><td class="px-6 py-4 text-ink/60">Painting, carpenter, scaffold &amp; maintenance</td><td class="px-6 py-4"><span class="rounded-none bg-surface px-3 py-1 text-xs">PT. Freeport Indonesia</span></td></tr>
+          <tr x-show="!q || $el.textContent.toLowerCase().includes(q.toLowerCase())" class="hover:bg-surface"><td class="px-6 py-4 tabular-nums text-ink/40">11</td><td class="px-6 py-4 font-medium">Painting &amp; Scaffolding</td><td class="px-6 py-4 text-ink/60">Highland</td><td class="px-6 py-4 text-ink/60">Pengecatan &amp; penyediaan alat perancah untuk PJP wilayah dataran tinggi &amp; rendah</td><td class="px-6 py-4"><span class="rounded-none bg-surface px-3 py-1 text-xs">PT. Freeport Indonesia</span></td></tr>
+          <tr x-show="!q || $el.textContent.toLowerCase().includes(q.toLowerCase())" class="hover:bg-surface"><td class="px-6 py-4 tabular-nums text-ink/40">12</td><td class="px-6 py-4 font-medium">Painting &amp; Scaffolding</td><td class="px-6 py-4 text-ink/60">Lowland</td><td class="px-6 py-4 text-ink/60">FM Carpenter, Scaffolding &amp; Maintenance RPH</td><td class="px-6 py-4"><span class="rounded-none bg-surface px-3 py-1 text-xs">PT. Freeport Indonesia</span></td></tr>
+          <tr x-show="!q || $el.textContent.toLowerCase().includes(q.toLowerCase())" class="hover:bg-surface"><td class="px-6 py-4 tabular-nums text-ink/40">13</td><td class="px-6 py-4 font-medium">Supply of Labor Services</td><td class="px-6 py-4 text-ink/60">Lowland</td><td class="px-6 py-4 text-ink/60">Labor Services IPHMC / menyediakan karyawan</td><td class="px-6 py-4"><span class="rounded-none bg-surface px-3 py-1 text-xs">PT. Freeport Indonesia</span></td></tr>
+          <tr x-show="!q || $el.textContent.toLowerCase().includes(q.toLowerCase())" class="hover:bg-surface"><td class="px-6 py-4 tabular-nums text-ink/40">14</td><td class="px-6 py-4 font-medium">Supply of Labor Services</td><td class="px-6 py-4 text-ink/60">Highland</td><td class="px-6 py-4 text-ink/60">Labor Services RUC / menyediakan karyawan</td><td class="px-6 py-4"><span class="rounded-none bg-surface px-3 py-1 text-xs">PT. RUC Cementation Indonesia</span></td></tr>
+          <tr x-show="!q || $el.textContent.toLowerCase().includes(q.toLowerCase())" class="hover:bg-surface"><td class="px-6 py-4 tabular-nums text-ink/40">15</td><td class="px-6 py-4 font-medium">Transportasi</td><td class="px-6 py-4 text-ink/60">Lowland</td><td class="px-6 py-4 text-ink/60">Bus transport / rental</td><td class="px-6 py-4"><span class="rounded-none bg-surface px-3 py-1 text-xs">PT. Freeport Indonesia</span></td></tr>
+          <tr x-show="!q || $el.textContent.toLowerCase().includes(q.toLowerCase())" class="hover:bg-surface"><td class="px-6 py-4 tabular-nums text-ink/40">16</td><td class="px-6 py-4 font-medium">Supply of Labor Services</td><td class="px-6 py-4 text-ink/60">Lowland</td><td class="px-6 py-4 text-ink/60">Unit bus transport Twall</td><td class="px-6 py-4"><span class="rounded-none bg-surface px-3 py-1 text-xs">PT. Freeport Indonesia</span></td></tr>
+          <tr x-show="!q || $el.textContent.toLowerCase().includes(q.toLowerCase())" class="hover:bg-surface"><td class="px-6 py-4 tabular-nums text-ink/40">17</td><td class="px-6 py-4 font-medium">Supply of Labor Services</td><td class="px-6 py-4 text-ink/60">Lowland</td><td class="px-6 py-4 text-ink/60">DWP</td><td class="px-6 py-4"><span class="rounded-none bg-surface px-3 py-1 text-xs">PT. Freeport Indonesia</span></td></tr>
+          <tr x-show="!q || $el.textContent.toLowerCase().includes(q.toLowerCase())" class="hover:bg-surface"><td class="px-6 py-4 tabular-nums text-ink/40">18</td><td class="px-6 py-4 font-medium">Unit Rental</td><td class="px-6 py-4 text-ink/60">Lowland</td><td class="px-6 py-4 text-ink/60">Rental unit / bus anak sekolah</td><td class="px-6 py-4"><span class="rounded-none bg-surface px-3 py-1 text-xs">Yayasan Pendidikan Jayawijaya / PT. Freeport Indonesia</span></td></tr>
+          <tr x-show="!q || $el.textContent.toLowerCase().includes(q.toLowerCase())" class="hover:bg-surface"><td class="px-6 py-4 tabular-nums text-ink/40">19</td><td class="px-6 py-4 font-medium">Supply of Labor Services &amp; Unit Rental</td><td class="px-6 py-4 text-ink/60">Lowland</td><td class="px-6 py-4 text-ink/60">Labor services &amp; unit rental</td><td class="px-6 py-4"><span class="rounded-none bg-surface px-3 py-1 text-xs">PT. Sandvik SMC</span></td></tr>
+          <tr x-show="!q || $el.textContent.toLowerCase().includes(q.toLowerCase())" class="hover:bg-surface"><td class="px-6 py-4 tabular-nums text-ink/40">20</td><td class="px-6 py-4 font-medium">Supply of Labor Services</td><td class="px-6 py-4 text-ink/60">Highland – Lowland</td><td class="px-6 py-4 text-ink/60">Facilities Management</td><td class="px-6 py-4"><span class="rounded-none bg-surface px-3 py-1 text-xs">PT. Freeport Indonesia</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="container-x">
+    <div class="grid gap-4 md:grid-cols-2">
+      
+      <div class="flex items-center justify-between rounded-none bg-white p-8">
+        <div><p class="text-xs uppercase tracking-widest text-ink/40">Kerja sama dengan</p><p class="mt-2 text-2xl font-medium tracking-tight">PT. Probesco Disatama</p></div>
+        <span class="grid h-14 w-14 place-items-center rounded-none bg-navy text-xl text-white"><i class="fa-solid fa-handshake"></i></span>
+      </div>
+      <div class="flex items-center justify-between rounded-none bg-white p-8">
+        <div><p class="text-xs uppercase tracking-widest text-ink/40">Kerja sama dengan</p><p class="mt-2 text-2xl font-medium tracking-tight">LNG Genting Oil</p></div>
+        <span class="grid h-14 w-14 place-items-center rounded-none bg-navy text-xl text-white"><i class="fa-solid fa-oil-well"></i></span>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer class="mt-24 bg-ink text-white">
+  <div class="container-x flex flex-col items-center py-14 text-center">
+    <!-- Baris 1: identitas -->
+    <a href="index.html" class="flex flex-col items-center gap-4">
+      <span class="bg-white p-3"><img src="assets/img/logo-ybm.png" alt="Logo PT. Yawiraya Bina Mandiri" class="h-12 w-auto"></span>
+      <span>
+        <span class="block text-lg font-semibold">PT. Yawiraya Bina Mandiri</span>
+        <span class="block text-xs text-white/50">General Contractor | Supplier | Perdagangan Umum</span>
+      </span>
+    </a>
+    <p class="mt-4 max-w-xl text-sm leading-relaxed text-white/60">Jl. Pendidikan Jalur 1-5a, Otomona, Mimika Baru, Timika, Papua 99910 · <a href="tel:09013265824" class="hover:text-sky">(0901) 3265824</a> · <a href="mailto:pt.yawiraya@yahoo.com" class="hover:text-sky">pt.yawiraya@yahoo.com</a></p>
+
+    <!-- Baris 2: menu & media sosial -->
+    <div class="mt-10 flex w-full flex-col items-center gap-6 border-t border-white/10 pt-10">
+      <nav class="flex flex-wrap justify-center gap-x-6 gap-y-2 text-sm text-white/70" aria-label="Navigasi footer">
+        <a href="index.html" class="hover:text-sky">Beranda</a>
+        <a href="tentang.html" class="hover:text-sky">Tentang</a>
+        <a href="layanan.html" class="hover:text-sky">Layanan</a>
+        <a href="pengalaman.html" class="hover:text-sky">Pengalaman</a>
+        <a href="k3.html" class="hover:text-sky">K3</a>
+        <a href="armada.html" class="hover:text-sky">Armada</a>
+        <a href="kontak.html" class="hover:text-sky">Kontak</a>
+      </nav>
+      <div class="flex items-center gap-3" aria-label="Media sosial">
+        <a href="#" target="_blank" rel="noopener noreferrer" aria-label="Instagram" title="Instagram" class="grid h-11 w-11 place-items-center rounded-md bg-white/10 text-white/80 transition hover:bg-sky hover:text-white"><i class="fa-brands fa-instagram"></i></a>
+        <a href="#" target="_blank" rel="noopener noreferrer" aria-label="Facebook" title="Facebook" class="grid h-11 w-11 place-items-center rounded-md bg-white/10 text-white/80 transition hover:bg-sky hover:text-white"><i class="fa-brands fa-facebook-f"></i></a>
+        <a href="#" target="_blank" rel="noopener noreferrer" aria-label="YouTube" title="YouTube" class="grid h-11 w-11 place-items-center rounded-md bg-white/10 text-white/80 transition hover:bg-sky hover:text-white"><i class="fa-brands fa-youtube"></i></a>
+        <a href="#" target="_blank" rel="noopener noreferrer" aria-label="WhatsApp Channel" title="WhatsApp Channel" class="grid h-11 w-11 place-items-center rounded-md bg-white/10 text-white/80 transition hover:bg-sky hover:text-white"><i class="fa-brands fa-whatsapp"></i></a>
+      </div>
+    </div>
+
+    <!-- Baris 3: hak cipta & powered by -->
+    <div class="mt-10 flex w-full flex-col items-center gap-3 border-t border-white/10 pt-6 text-xs text-white/50">
+      <div class="flex flex-wrap items-center justify-center gap-x-4 gap-y-2">
+        <p>&copy; <span x-data x-text="new Date().getFullYear()">2026</span> PT. Yawiraya Bina Mandiri. All Rights Reserved.</p>
+        <a href="admin/login.html" class="inline-flex items-center gap-1.5 rounded-md bg-white/10 px-3 py-1.5 font-medium text-white/80 transition hover:bg-sky hover:text-white"><i class="fa-solid fa-right-to-bracket text-[10px]"></i> Masuk</a>
+      </div>
+      <a href="https://nokensoft.com" target="_blank" rel="noopener noreferrer" class="group inline-flex items-center gap-2 hover:text-white">
+        Powered by <img src="assets/img/nokensoft.png" alt="Logo Nokensoft" class="h-5 w-auto transition group-hover:scale-110"> <span class="font-medium text-white/80 group-hover:text-sky">Nokensoft.com</span>
+      </a>
+    </div>
+  </div>
+</footer>
+<script defer src="https://translate.google.com/translate_a/element.js?cb=googleTranslateInit"></script>
+<a href="#" x-data="{ show: false }" @scroll.window="show = window.scrollY > 600" x-show="show" x-transition x-cloak
+  class="fixed bottom-6 right-6 z-40 grid h-12 w-12 place-items-center rounded-md bg-navy text-white shadow-lg hover:bg-sky" aria-label="Kembali ke atas">
+  <i class="fa-solid fa-arrow-up"></i>
+</a>
+</body>
+</html>
